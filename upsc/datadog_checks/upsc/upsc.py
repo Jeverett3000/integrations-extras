@@ -63,11 +63,7 @@ class UpscCheck(AgentCheck):
         for k, v in stats.items():
             if k in self.excluded:
                 continue
-            found_re = False
-            for r in self.excluded_re:
-                if r.match(k):
-                    found_re = True
-                    break
+            found_re = any(r.match(k) for r in self.excluded_re)
             if found_re:
                 continue
 
@@ -81,7 +77,7 @@ class UpscCheck(AgentCheck):
                     else:
                         results[k] = 0.0
                 if k in self.string_tags:
-                    tags.add('{}:{}'.format(k, ensure_unicode(self.convert_to_underscore_separated(v))))
+                    tags.add(f'{k}:{ensure_unicode(self.convert_to_underscore_separated(v))}')
         return results, tags
 
     def check(self, instance):
@@ -90,11 +86,7 @@ class UpscCheck(AgentCheck):
         for device in self.list_ups_devices():
 
             if device not in self.excluded_devices:
-                excluded = False
-                for r in self.excluded_devices_re:
-                    if r.match(device):
-                        excluded = True
-                        break
+                excluded = any(r.match(device) for r in self.excluded_devices_re)
                 if excluded:
                     continue
 
@@ -106,7 +98,7 @@ class UpscCheck(AgentCheck):
 
                 # report stats
                 for k, v in stats.items():
-                    self.gauge('upsc.{}'.format(k), v, tags=tags)
+                    self.gauge(f'upsc.{k}', v, tags=tags)
 
     def update_from_config(self, instance):
         """Update Configuration tunables from instance configuration.
@@ -122,10 +114,13 @@ class UpscCheck(AgentCheck):
         self.excluded = list(self.DEFAULT_EXCLUDED_TAGS)
         self.excluded.extend(instance.get('excluded', []))
         self.excluded_re = []
-        for excluded_regex in instance.get('excluded_re', []):
-            self.excluded_re.append(re.compile(excluded_regex))
-
+        self.excluded_re.extend(
+            re.compile(excluded_regex)
+            for excluded_regex in instance.get('excluded_re', [])
+        )
         self.excluded_devices = instance.get('excluded_devices', [])
         self.excluded_devices_re = []
-        for excluded_regex in instance.get('excluded_devices_re', []):
-            self.excluded_devices_re.append(re.compile(excluded_regex))
+        self.excluded_devices_re.extend(
+            re.compile(excluded_regex)
+            for excluded_regex in instance.get('excluded_devices_re', [])
+        )

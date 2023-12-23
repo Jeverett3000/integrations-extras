@@ -11,7 +11,7 @@ HOST = get_docker_hostname()
 CONFIG = {
     'zabbix_user': 'Admin',
     'zabbix_password': 'zabbix',
-    'zabbix_api': 'http://{}:8080/api_jsonrpc.php'.format(HOST),
+    'zabbix_api': f'http://{HOST}:8080/api_jsonrpc.php',
 }
 
 
@@ -35,17 +35,14 @@ def instance_e2e():
 
 @pytest.fixture(scope="session")
 def instance_empty():
-    instance = {}
-    return instance
+    return {}
 
 
 @pytest.fixture(scope="session")
 def instance_missing_pass():
-    instance = {"zabbix_user": "zabbix"}
-    return instance
+    return {"zabbix_user": "zabbix"}
 
 
 @pytest.fixture(scope="session")
 def instance_missing_url():
-    instance = {"zabbix_user": "zabbix", "zabbix_password": "zabbix"}
-    return instance
+    return {"zabbix_user": "zabbix", "zabbix_password": "zabbix"}

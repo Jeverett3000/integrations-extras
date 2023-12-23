@@ -51,10 +51,7 @@ class OctoPrintCheck(AgentCheck):
         return float(temp)
 
     def seconds_to_minutes(self, seconds):
-        if not seconds:
-            return 0
-        else:
-            return int(seconds / 60)
+        return 0 if not seconds else int(seconds / 60)
 
     # Get stats from REST API as json
     def get_api_info(self, path):
@@ -90,7 +87,7 @@ class OctoPrintCheck(AgentCheck):
         est_print_time = self.seconds_to_minutes(job_info["job"]["estimatedPrintTime"])
         if est_print_time > 0:
             pct_completed = job_info["progress"]["completion"]
-            print('type of est print time: {}'.format(type(est_print_time)))
+            print(f'type of est print time: {type(est_print_time)}')
             self.gauge("octoprint.est_print_time", est_print_time, tags=tags)
             self.gauge("octoprint.pct_completed", pct_completed, tags=tags)
 
@@ -103,7 +100,7 @@ class OctoPrintCheck(AgentCheck):
         # Extruder Temperatures
         extruder_temps = self.get_api_info(EXTRUDER_URL)
         for key in extruder_temps.keys():
-            tooltags = tags + ['toolname:' + key]
+            tooltags = tags + [f'toolname:{key}']
             current_tool_temp = extruder_temps[key]["actual"]
             target_tool_temp = extruder_temps[key]["target"]
             self.gauge("octoprint.current_tool_temp", current_tool_temp, tags=tooltags)
@@ -112,7 +109,7 @@ class OctoPrintCheck(AgentCheck):
         # Bed Temperatures
         bed_temp = self.get_api_info(BED_URL)
         for key in bed_temp.keys():
-            bedtags = tags + ['bedname:' + key]
+            bedtags = tags + [f'bedname:{key}']
             current_bed_temp = bed_temp[key]["actual"]
             target_bed_temp = bed_temp[key]["target"]
             self.gauge("octoprint.current_bed_temp", current_bed_temp, tags=bedtags)

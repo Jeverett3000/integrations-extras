@@ -26,7 +26,7 @@ def add_latency_to_response(data, event_time, initiate_pull_time, recieve_time):
 
 
 def _get_token_and_cookie_headers(token, vmanage_cookie):
-    return {'Cookie': "JSESSIONID={}".format(vmanage_cookie), 'X-XSRF-TOKEN': token}
+    return {'Cookie': f"JSESSIONID={vmanage_cookie}", 'X-XSRF-TOKEN': token}
 
 
 class vManageApi:
@@ -139,11 +139,10 @@ class vManageApi:
         return response
 
     def get_top_application(self):
-        response = {}
         token, vmanage_cookie = self._get_token_and_cookie()
         url = '/dataservice/statistics/dpi/applications/summary'
         initiate_pull_time = datetime.now()
-        url1 = "{}://{}{}".format(self.protocol, self.hostname, url)
+        url1 = f"{self.protocol}://{self.hostname}{url}"
         resp = requests.get(
             url1,
             auth=(self.username, self.password),
@@ -152,7 +151,7 @@ class vManageApi:
         )
         recieve_time = datetime.now()
         event_time = resp.json()["header"]["generatedOn"]
-        response["data"] = resp.json()["data"]
+        response = {"data": resp.json()["data"]}
         response = add_latency_to_response(response, event_time, initiate_pull_time, recieve_time)
         return response
 

@@ -61,7 +61,7 @@ class SyncthingCheck(AgentCheck):
                 # skip local and never connected devices
                 continue
 
-            dt = tags + ('device_id:' + d, 'device_name:' + names[d])
+            dt = tags + (f'device_id:{d}', f'device_name:{names[d]}')
 
             self.gauge('stats.device.last_seen', self.__get_delta(now, v['lastSeen']), tags=dt)
             self.gauge('stats.device.last_connection_duration', v['lastConnectionDurationS'], tags=dt)
@@ -72,9 +72,9 @@ class SyncthingCheck(AgentCheck):
         now = datetime.now()
 
         for folder, tp in folders:
-            s = self.__get_json('db/status?folder=' + folder)
+            s = self.__get_json(f'db/status?folder={folder}')
 
-            ft = tags + ('folder:' + folder, 'type:' + tp)
+            ft = tags + (f'folder:{folder}', f'type:{tp}')
 
             self.gauge('folder.global.bytes', int(s['globalBytes']), tags=ft)
             self.gauge('folder.global.deleted', int(s['globalDeleted']), tags=ft)
@@ -101,9 +101,7 @@ class SyncthingCheck(AgentCheck):
 
     def __check_errors(self, tags):
         res = self.__get_json('system/error')['errors']
-        count = 0
-        if res is not None:
-            count = len(res)
+        count = len(res) if res is not None else 0
         self.count('errors', count, tags=tags)
 
     def check(self, _):
@@ -121,21 +119,21 @@ class SyncthingCheck(AgentCheck):
             self.service_check(
                 'can_connect',
                 AgentCheck.CRITICAL,
-                message='Request timeout: {}, {}'.format(self.url, e),
+                message=f'Request timeout: {self.url}, {e}',
             )
 
         except (HTTPError, InvalidURL, ConnectionError) as e:
             self.service_check(
                 'can_connect',
                 AgentCheck.CRITICAL,
-                message='Request failed: {}, {}'.format(self.url, e),
+                message=f'Request failed: {self.url}, {e}',
             )
 
         except JSONDecodeError as e:
             self.service_check(
                 'can_connect',
                 AgentCheck.CRITICAL,
-                message='JSON Parse failed: {}, {}'.format(self.url, e),
+                message=f'JSON Parse failed: {self.url}, {e}',
             )
 
         except ValueError as e:

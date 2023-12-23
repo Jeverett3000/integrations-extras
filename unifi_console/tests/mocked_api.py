@@ -35,7 +35,7 @@ class MockedAPI(object):
 
                 if assetType == "uap":
                     devices.append(UAP(dev))
-                elif assetType == "ugw" or assetType == "usg":  # in case they ever fix the name in the api.
+                elif assetType in ["ugw", "usg"]:  # in case they ever fix the name in the api.
                     devices.append(USG(dev))
                 elif assetType == "usw":
                     devices.append(USW(dev))
@@ -50,9 +50,5 @@ class MockedAPI(object):
         with open(os.path.join(HERE, "fixtures", "client_metrics.json")) as f:
 
             resp = json.load(f)
-            clients: List[Client] = []
-
-            for cli in resp["data"]:
-                clients.append(Client(cli))
-
+            clients: List[Client] = [Client(cli) for cli in resp["data"]]
             return clients

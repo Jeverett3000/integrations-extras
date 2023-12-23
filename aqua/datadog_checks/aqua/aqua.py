@@ -62,17 +62,16 @@ class AquaCheck(AgentCheck):
         """
         Validate that all required parameters are set in the instance.
         """
-        missing = []
-        for option in ('api_user', 'password', 'url'):
-            if option not in instance:
-                missing.append(option)
-
-        if missing:
+        if missing := [
+            option
+            for option in ('api_user', 'password', 'url')
+            if option not in instance
+        ]:
             last = missing.pop()
             missing = ', '.join(missing)
-            missing += ', and {}'.format(last) if missing else last
+            missing += f', and {last}' if missing else last
 
-            raise ConfigurationError('Aqua instance missing: {}'.format(missing))
+            raise ConfigurationError(f'Aqua instance missing: {missing}')
 
     def get_aqua_token(self, instance):
         """
@@ -88,7 +87,11 @@ class AquaCheck(AgentCheck):
         """
         Form queries and interact with the Aqua API.
         """
-        headers = {'Content-Type': 'application/json', 'charset': 'UTF-8', 'Authorization': 'Bearer ' + token}
+        headers = {
+            'Content-Type': 'application/json',
+            'charset': 'UTF-8',
+            'Authorization': f'Bearer {token}',
+        }
         res = self.http.get(urljoin(instance['url'], route), extra_headers=headers, timeout=60)
         res.raise_for_status()
         return json.loads(res.text)
@@ -110,7 +113,9 @@ class AquaCheck(AgentCheck):
         image_metrics = metrics['registry_counts']['images']
         for sev in SEVERITIES:
             self.gauge(
-                metric_name, image_metrics[sev], tags=instance.get('tags', []) + ['severity:%s' % SEVERITIES[sev]]
+                metric_name,
+                image_metrics[sev],
+                tags=instance.get('tags', []) + [f'severity:{SEVERITIES[sev]}'],
             )
 
         # vulnerabilities
@@ -118,7 +123,9 @@ class AquaCheck(AgentCheck):
         vuln_metrics = metrics['registry_counts']['vulnerabilities']
         for sev in SEVERITIES:
             self.gauge(
-                metric_name, vuln_metrics[sev], tags=instance.get('tags', []) + ['severity:%s' % SEVERITIES[sev]]
+                metric_name,
+                vuln_metrics[sev],
+                tags=instance.get('tags', []) + [f'severity:{SEVERITIES[sev]}'],
             )
 
         # running containers
@@ -151,7 +158,11 @@ class AquaCheck(AgentCheck):
             self.log.error("Failed to get %s metrics. Error: %s", metric_name, ex)
             return
         for status in statuses:
-            self.gauge(metric_name, metrics[status], tags=instance.get('tags', []) + ['status:%s' % statuses[status]])
+            self.gauge(
+                metric_name,
+                metrics[status],
+                tags=instance.get('tags', []) + [f'status:{statuses[status]}'],
+            )
 
     def _report_connected_enforcers(self, instance, token):
         """

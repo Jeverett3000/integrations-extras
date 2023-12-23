@@ -30,12 +30,11 @@ class FilemageCheck(AgentCheck):
         Run the filemage service checks and send metrics to datadog API
         """
 
-        # check if filemage processes are alive
-        down_services = []
-        for service in self.filemage_service_checks:
-            if not FilemageCheck.isProcAlive(service):
-                down_services.append(service)
-        if len(down_services) != 0:
+        if down_services := [
+            service
+            for service in self.filemage_service_checks
+            if not FilemageCheck.isProcAlive(service)
+        ]:
             self.service_check(
                 "services_up", AgentCheck.CRITICAL, message=f'the following filemage services are down: {down_services}'
             )

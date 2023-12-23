@@ -16,10 +16,7 @@ class SpeedtestCheck(AgentCheck):
         server_id = self.instance.get("server_id")
         tags = self.instance.get("tags") or []
 
-        # test config for only **one** of the following above options
-        c = 0
-        for opt in (host, ip, interface, server_id):
-            c += int(opt not in [None, ""])  # trick, int(bool) returns 0 if False, 1 if True
+        c = sum(int(opt not in [None, ""]) for opt in (host, ip, interface, server_id))
         if c > 1:
             raise ConfigurationError("Only one of `host`, `ip`, `interface` or `server_id` may be configured.")
 
@@ -46,21 +43,20 @@ class SpeedtestCheck(AgentCheck):
         # Build command
         cmd = "speedtest -f json -p no -A -P 8 "
         if host:
-            cmd += " --host={}".format(host)
+            cmd += f" --host={host}"
         if ip:
-            cmd += " --ip={}".format(ip)
+            cmd += f" --ip={ip}"
         if interface:
-            cmd += " --interface={}".format(interface)
+            cmd += f" --interface={interface}"
         if server_id:
-            cmd += " --server-id={}".format(server_id)
+            cmd += f" --server-id={server_id}"
 
         return cmd
 
     def _call_command(self, cmd):
         # we keep this private so we can mock this in tests
         result = subprocess.check_output(cmd, shell=True)
-        payload = json.loads(result.strip())
-        return payload
+        return json.loads(result.strip())
 
     def _submit_data(self, payload, tags):
         """
@@ -111,18 +107,18 @@ class SpeedtestCheck(AgentCheck):
         # log for debugging, there is nothing sensitive here
         self.log.debug("speedtest output: %s", payload)
         if payload.get("type") != "result":
-            raise Exception("unexpected result type found: {}".format(payload.get("type")))
+            raise Exception(f'unexpected result type found: {payload.get("type")}')
 
         result_data = payload.get("result")
         server_data = payload.get("server")
         interface_data = payload.get("interface")
         tags = (tags or []) + [
-            "isp:{}".format(payload.get("isp")),  # this will be normalized per tag standards
-            "interface_name:{}".format(interface_data.get("name")),
-            "server_id:{}".format(server_data.get("id")),
-            "server_name:{}".format(server_data.get("name")),
-            "server_country:{}".format(server_data.get("country")),
-            "server_host:{}".format(server_data.get("host")),
+            f'isp:{payload.get("isp")}',
+            f'interface_name:{interface_data.get("name")}',
+            f'server_id:{server_data.get("id")}',
+            f'server_name:{server_data.get("name")}',
+            f'server_country:{server_data.get("country")}',
+            f'server_host:{server_data.get("host")}',
         ]
 
         event_msg = (
@@ -133,7 +129,7 @@ class SpeedtestCheck(AgentCheck):
 
         self.event(
             {
-                "msg_title": "Speedtest Run {}".format(result_data.get("id")),
+                "msg_title": f'Speedtest Run {result_data.get("id")}',
                 "msg_text": event_msg.format(
                     test_id=result_data.get("id"),
                     test_url=result_data.get("url"),

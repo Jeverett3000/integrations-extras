@@ -28,7 +28,12 @@ def test_metric(aggregator, dd_environment, monkeypatch):
     URL = dd_environment['URL']
 
     with monkeypatch.context() as m:
-        m.setattr(KernelcareCheck, 'KEY_KCARE_NAGIOS_ENDPOINT', URL + '/notfound/', raising=True)
+        m.setattr(
+            KernelcareCheck,
+            'KEY_KCARE_NAGIOS_ENDPOINT',
+            f'{URL}/notfound/',
+            raising=True,
+        )
         instance = {'key': dd_environment['KEY']}
         c = KernelcareCheck('kernelcare', {}, [instance])
         with pytest.raises(requests.HTTPError):

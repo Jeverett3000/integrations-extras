@@ -86,7 +86,7 @@ def _get_mock_metrics(filename):
 @pytest.fixture(scope="session")
 def tidb_instance():
     return {
-        'tidb_metric_url': "http://{}:{}/metrics".format(HOST, TIDB_PORT),
+        'tidb_metric_url': f"http://{HOST}:{TIDB_PORT}/metrics",
         'max_returned_metrics': "10000",
         'tags': ['tidb_cluster_name:test'],
     }
@@ -95,7 +95,7 @@ def tidb_instance():
 @pytest.fixture(scope="session")
 def tiflash_instance():
     return {
-        'tiflash_metric_url': "http://{}:{}/metrics".format(HOST, TIFLASH_PORT),
+        'tiflash_metric_url': f"http://{HOST}:{TIFLASH_PORT}/metrics",
         'max_returned_metrics': "10000",
         'tags': ['tidb_cluster_name:test'],
     }
@@ -104,7 +104,7 @@ def tiflash_instance():
 @pytest.fixture(scope="session")
 def tiflash_proxy_instance():
     return {
-        'tiflash_proxy_metric_url': "http://{}:{}/metrics".format(HOST, TIFLASH_PROXY_PORT),
+        'tiflash_proxy_metric_url': f"http://{HOST}:{TIFLASH_PROXY_PORT}/metrics",
         'max_returned_metrics': "10000",
         'tags': ['tidb_cluster_name:test'],
     }
@@ -113,7 +113,7 @@ def tiflash_proxy_instance():
 @pytest.fixture(scope="session")
 def tikv_instance():
     return {
-        'tikv_metric_url': "http://{}:{}/metrics".format(HOST, TIKV_PORT),
+        'tikv_metric_url': f"http://{HOST}:{TIKV_PORT}/metrics",
         'max_returned_metrics': "10000",
         'tags': ['tidb_cluster_name:test'],
     }
@@ -131,15 +131,5 @@ def dd_environment():
     # 1. Spins up the services defined in the compose file
     # 2. Waits for the url to be available before running the tests
     # 3. Tears down the services when the tests are finished
-    with docker_run(
-        compose_file,
-        endpoints=[
-            "http://{}:{}/metrics".format(HOST, TIDB_PORT),
-            "http://{}:{}/metrics".format(HOST, TIKV_PORT),
-            "http://{}:{}/metrics".format(HOST, PD_PORT),
-            "http://{}:{}/metrics".format(HOST, TIFLASH_PORT),
-            "http://{}:{}/metrics".format(HOST, TIFLASH_PROXY_PORT),
-        ],
-        sleep=5,
-    ):
+    with docker_run(compose_file, endpoints=[f"http://{HOST}:{TIDB_PORT}/metrics", f"http://{HOST}:{TIKV_PORT}/metrics", f"http://{HOST}:{PD_PORT}/metrics", f"http://{HOST}:{TIFLASH_PORT}/metrics", f"http://{HOST}:{TIFLASH_PROXY_PORT}/metrics"], sleep=5):
         yield

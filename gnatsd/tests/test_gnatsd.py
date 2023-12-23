@@ -56,12 +56,30 @@ def test_metrics(aggregator, instance):
     aggregator.assert_metric('gnatsd.routez.num_routes', metric_type=aggregator.GAUGE)
 
     route_ip = get_container_ip('docker_nats_serverA_1').replace('.', '_')
-    aggregator.assert_metric('gnatsd.routez.routes.{}.in_msgs'.format(route_ip), metric_type=aggregator.COUNT)
-    aggregator.assert_metric('gnatsd.routez.routes.{}.out_msgs'.format(route_ip), metric_type=aggregator.COUNT)
-    aggregator.assert_metric('gnatsd.routez.routes.{}.subscriptions'.format(route_ip), metric_type=aggregator.GAUGE)
-    aggregator.assert_metric('gnatsd.routez.routes.{}.in_bytes'.format(route_ip), metric_type=aggregator.COUNT)
-    aggregator.assert_metric('gnatsd.routez.routes.{}.out_bytes'.format(route_ip), metric_type=aggregator.COUNT)
-    aggregator.assert_metric('gnatsd.routez.routes.{}.pending_size'.format(route_ip), metric_type=aggregator.GAUGE)
+    aggregator.assert_metric(
+        f'gnatsd.routez.routes.{route_ip}.in_msgs',
+        metric_type=aggregator.COUNT,
+    )
+    aggregator.assert_metric(
+        f'gnatsd.routez.routes.{route_ip}.out_msgs',
+        metric_type=aggregator.COUNT,
+    )
+    aggregator.assert_metric(
+        f'gnatsd.routez.routes.{route_ip}.subscriptions',
+        metric_type=aggregator.GAUGE,
+    )
+    aggregator.assert_metric(
+        f'gnatsd.routez.routes.{route_ip}.in_bytes',
+        metric_type=aggregator.COUNT,
+    )
+    aggregator.assert_metric(
+        f'gnatsd.routez.routes.{route_ip}.out_bytes',
+        metric_type=aggregator.COUNT,
+    )
+    aggregator.assert_metric(
+        f'gnatsd.routez.routes.{route_ip}.pending_size',
+        metric_type=aggregator.GAUGE,
+    )
     aggregator.assert_all_metrics_covered()
 
 
@@ -79,12 +97,16 @@ def test_metric_tags(aggregator, instance):
 
     route_ip = get_container_ip('docker_nats_serverA_1').replace('.', '_')
     aggregator.assert_metric_has_tag_prefix(
-        'gnatsd.routez.routes.{}.in_msgs'.format(route_ip), 'gnatsd-rid', at_least=1
+        f'gnatsd.routez.routes.{route_ip}.in_msgs', 'gnatsd-rid', at_least=1
     )
     aggregator.assert_metric_has_tag_prefix(
-        'gnatsd.routez.routes.{}.in_msgs'.format(route_ip), 'gnatsd-remote_id', at_least=1
+        f'gnatsd.routez.routes.{route_ip}.in_msgs',
+        'gnatsd-remote_id',
+        at_least=1,
     )
-    aggregator.assert_metric_has_tag_prefix('gnatsd.routez.routes.{}.in_msgs'.format(route_ip), 'gnatsd-ip', at_least=1)
+    aggregator.assert_metric_has_tag_prefix(
+        f'gnatsd.routez.routes.{route_ip}.in_msgs', 'gnatsd-ip', at_least=1
+    )
 
 
 @pytest.mark.usefixtures('dd_environment')

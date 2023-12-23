@@ -7,7 +7,7 @@ from datadog_checks.dev import get_docker_hostname
 
 HOST = get_docker_hostname()
 
-INSTANCE = {'server': 'http://{}:8080'.format(HOST), 'environment': 'integration'}
+INSTANCE = {'server': f'http://{HOST}:8080', 'environment': 'integration'}
 
 TEST_STORM_CLUSTER_SUMMARY = {
     "executorsTotal": 33,

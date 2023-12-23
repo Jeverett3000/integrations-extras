@@ -27,7 +27,7 @@ class VespaCheck(AgentCheck):
         consumer = instance.get('consumer')
         if not consumer:
             raise CheckException("The consumer must be specified in the configuration.")
-        url = self.URL + '?consumer=' + consumer
+        url = f'{self.URL}?consumer={consumer}'
         try:
             json = self._get_metrics_json(url)
             if 'services' not in json:
@@ -35,7 +35,7 @@ class VespaCheck(AgentCheck):
                     self.METRICS_SERVICE_CHECK,
                     AgentCheck.WARNING,
                     tags=instance_tags,
-                    message="No services in response from metrics proxy on {}".format(url),
+                    message=f"No services in response from metrics proxy on {url}",
                 )
                 return
 
@@ -49,18 +49,26 @@ class VespaCheck(AgentCheck):
             self.service_check(self.METRICS_SERVICE_CHECK, AgentCheck.OK, tags=instance_tags)
         except Timeout as e:
             self._report_metrics_error(
-                "Timed out connecting to Vespa's node metrics api: {}".format(e), AgentCheck.CRITICAL, instance_tags
+                f"Timed out connecting to Vespa's node metrics api: {e}",
+                AgentCheck.CRITICAL,
+                instance_tags,
             )
         except (HTTPError, InvalidURL, ConnectionError) as e:
             self._report_metrics_error(
-                "Could not connect to Vespa's node metrics api: {}".format(e), AgentCheck.CRITICAL, instance_tags
+                f"Could not connect to Vespa's node metrics api: {e}",
+                AgentCheck.CRITICAL,
+                instance_tags,
             )
         except JSONDecodeError as e:
             self._report_metrics_error(
-                "Error parsing JSON from Vespa's node metrics api: {}".format(e), AgentCheck.CRITICAL, instance_tags
+                f"Error parsing JSON from Vespa's node metrics api: {e}",
+                AgentCheck.CRITICAL,
+                instance_tags,
             )
         except Exception as e:
-            self._report_metrics_error("Unexpected error: {}".format(e), AgentCheck.WARNING, instance_tags)
+            self._report_metrics_error(
+                f"Unexpected error: {e}", AgentCheck.WARNING, instance_tags
+            )
 
     def _report_metrics_error(self, msg, level, instance_tags):
         self.log.warning(msg)
@@ -88,7 +96,7 @@ class VespaCheck(AgentCheck):
             return
         metric_tags = self._get_tags(metrics_elem, service_name)
         for name, value in metrics_elem['values'].items():
-            full_name = "vespa." + name
+            full_name = f"vespa.{name}"
             self._emit_metric(full_name, value, metric_tags + instance_tags)
 
     def _emit_metric(self, name, value, tags):
@@ -111,8 +119,7 @@ class VespaCheck(AgentCheck):
         tags = []
         if 'dimensions' in metrics_elem:
             dimensions = metrics_elem['dimensions']
-            for dim, dim_val in dimensions.items():
-                tags.append(dim + ":" + dim_val)
+            tags.extend(f"{dim}:{dim_val}" for dim, dim_val in dimensions.items())
         tags.append(self.VESPA_SERVICE_TAG + service_name)
         return tags
 
@@ -124,22 +131,22 @@ class VespaCheck(AgentCheck):
             tags = self._get_tags(service['metrics'][0], service_name)
 
         tags = tags + instance_tags
-        if code == "up":
-            self.service_check(self.PROCESS_SERVICE_CHECK, AgentCheck.OK, tags=tags)
-            self.services_up += 1
-        elif code == "down":
+        if code == "down":
             self.service_check(
                 self.PROCESS_SERVICE_CHECK,
                 AgentCheck.CRITICAL,
                 tags=tags,
-                message="Service {} reports down: {}".format(service_name, description),
+                message=f"Service {service_name} reports down: {description}",
             )
             self.log.warning("Service %s reports down: %s", service_name, description)
+        elif code == "up":
+            self.service_check(self.PROCESS_SERVICE_CHECK, AgentCheck.OK, tags=tags)
+            self.services_up += 1
         else:
             self.service_check(
                 self.PROCESS_SERVICE_CHECK,
                 AgentCheck.WARNING,
                 tags=tags,
-                message="Service {} reports unknown status: {}".format(service_name, description),
+                message=f"Service {service_name} reports unknown status: {description}",
             )
             self.log.warning("Service %s reports unknown status: %s", service_name, description)

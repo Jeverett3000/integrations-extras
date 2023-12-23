@@ -54,7 +54,7 @@ class ScalrCheck(AgentCheck):
             self.service_check(
                 self.SERVICE_CHECK_NAME,
                 AgentCheck.CRITICAL,
-                message="Request timeout: {}, {}".format(self.url, e),
+                message=f"Request timeout: {self.url}, {e}",
             )
             self.log.exception("Communication with Scalr timed out. %s", e)
 
@@ -62,7 +62,7 @@ class ScalrCheck(AgentCheck):
             self.service_check(
                 self.SERVICE_CHECK_NAME,
                 AgentCheck.CRITICAL,
-                message="Request failed: {}, {}".format(self.url, e),
+                message=f"Request failed: {self.url}, {e}",
             )
             self.log.exception("Couldn't reach Scalr. %s", e)
 
@@ -70,7 +70,7 @@ class ScalrCheck(AgentCheck):
             self.service_check(
                 self.SERVICE_CHECK_NAME,
                 AgentCheck.CRITICAL,
-                message="JSON Parse failed: {}, {}".format(self.url, e),
+                message=f"JSON Parse failed: {self.url}, {e}",
             )
             self.log.exception("Unexpected response from Scalr. %s", e)
 
@@ -82,7 +82,7 @@ class ScalrCheck(AgentCheck):
         parsed_url = urlparse(self.url)
         loc = parsed_url.netloc.find('.')
         domain_name = parsed_url.netloc[:loc]
-        if -1 == loc or not domain_name:
+        if loc == -1 or not domain_name:
             raise errors.ConfigurationError(
                 f"Scalr instance configuration '{SCALR_URL_PARAM}' is not correct. "
                 "Value should be in format https://<account_name>.scalr.io"
@@ -93,9 +93,7 @@ class ScalrCheck(AgentCheck):
         if type(data) is not list or len(data) != 1:
             raise errors.CheckException("SCALR account not found.")
 
-        acc_id = data[0]['id']
-
-        return acc_id
+        return data[0]['id']
 
     def _get_json(self, endpoint) -> dict:
         response = self.http.get(
@@ -109,6 +107,6 @@ class ScalrCheck(AgentCheck):
     def _get_extra_headers(self) -> dict:
         return {
             "Accept": "application/vnd.api+json, application/json",
-            "Authorization": "Bearer {}".format(self.token),
+            "Authorization": f"Bearer {self.token}",
             "Prefer": "profile=preview",
         }

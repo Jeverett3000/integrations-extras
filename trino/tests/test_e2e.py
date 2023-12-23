@@ -24,7 +24,7 @@ def test_e2e(dd_agent_check):
 
     for instance in CHECK_CONFIG['instances']:
         tags = [
-            'instance:trino-{}-{}'.format(instance['host'], instance['port']),
-            'jmx_server:{}'.format(instance['host']),
+            f"instance:trino-{instance['host']}-{instance['port']}",
+            f"jmx_server:{instance['host']}",
         ]
         aggregator.assert_service_check('trino.can_connect', status=AgentCheck.OK, tags=tags)

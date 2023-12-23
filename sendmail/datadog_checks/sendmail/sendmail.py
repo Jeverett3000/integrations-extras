@@ -16,8 +16,10 @@ class SendmailCheck(AgentCheck):
 
         valid_commands = ["mailq", "sendmail"]
 
-        if not any(cmd in sendmail_command for cmd in valid_commands):
-            raise ConfigurationError("{} does not seem to be a valid command".format(sendmail_command))
+        if all(cmd not in sendmail_command for cmd in valid_commands):
+            raise ConfigurationError(
+                f"{sendmail_command} does not seem to be a valid command"
+            )
 
         try:
             queue_size = self._get_sendmail_stats(sendmail_command, use_sudo)
@@ -39,7 +41,7 @@ class SendmailCheck(AgentCheck):
     def _get_sendmail_stats(self, sendmail_command, use_sudo):
 
         if not os.path.exists(sendmail_command):
-            raise Exception('{} does not exist'.format(sendmail_command))
+            raise Exception(f'{sendmail_command} does not exist')
 
         self.log.debug(sendmail_command)
 

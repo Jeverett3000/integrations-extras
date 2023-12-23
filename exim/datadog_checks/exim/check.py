@@ -34,10 +34,9 @@ class EximCheck(AgentCheck):
 
     def _get_config(self):
         tags = self.instance.get('tags', [])
-        instance_config = {
+        return {
             'tags': tags,
         }
-        return instance_config
 
     def _get_queue_stats(self):
 
@@ -61,15 +60,13 @@ class EximCheck(AgentCheck):
                 header = line.split()
                 queue = namedtuple('Queue', header)
                 continue
-            line_contents = line.split()
-            if line_contents:
+            if line_contents := line.split():
                 data.append(queue(*line_contents))
         return data
 
     @staticmethod
     def parse_size(size_string):
-        match = re.match(r"([0-9]+)([a-z]+)", size_string, re.I)
-        if match:
+        if match := re.match(r"([0-9]+)([a-z]+)", size_string, re.I):
             number, unit = match.groups()
         else:
             number, unit = size_string, 'B'

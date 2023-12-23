@@ -70,16 +70,18 @@ def dd_environment():
                 )
             ]
 
-        instances = {
+        yield {
             'instances': [
                 {
-                    'prometheus_url': 'http://{}:{}/metrics'.format(*ip_ports_metrics[0]),
-                    'gatekeeper_health_endpoint': 'http://{}:{}/'.format(*ip_ports_health[0]),
+                    'prometheus_url': 'http://{}:{}/metrics'.format(
+                        *ip_ports_metrics[0]
+                    ),
+                    'gatekeeper_health_endpoint': 'http://{}:{}/'.format(
+                        *ip_ports_health[0]
+                    ),
                 },
             ]
         }
-
-        yield instances
 
 
 @pytest.fixture

@@ -17,9 +17,9 @@ class PiholeCheck(AgentCheck):
     def check(self, instance):
         host = self.instance.get('host')
         custom_tags = self.instance.get("tags", [])
-        custom_tags.append("target_host:{}".format(host))
+        custom_tags.append(f"target_host:{host}")
 
-        url = 'http://' + host + '/admin/api.php'  # adding the rest of the URL to the given host parameter
+        url = f'http://{host}/admin/api.php'
         data, status_code = self._collect_response(url)
         if status_code == 200:  # else is after all the metrics
 

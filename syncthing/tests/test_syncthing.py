@@ -188,8 +188,7 @@ def test_check(dd_run_check, aggregator, instance, requests_mock):
 
     for f in ['folder1', 'folder2']:
         ftags = list(gtags)
-        ftags.append('folder:' + f)
-        ftags.append('type:receiveonly')
+        ftags.extend((f'folder:{f}', 'type:receiveonly'))
         aggregator.assert_metric('syncthing.folder.bytes', tags=ftags)
         aggregator.assert_metric('syncthing.folder.errors', tags=ftags)
         aggregator.assert_metric('syncthing.folder.files', tags=ftags)
@@ -213,8 +212,7 @@ def test_check(dd_run_check, aggregator, instance, requests_mock):
 
     for d in ['ID1', 'ID2']:
         dtags = list(gtags)
-        dtags.append('device_name:' + d)
-        dtags.append('device_id:' + d)
+        dtags.extend((f'device_name:{d}', f'device_id:{d}'))
         aggregator.assert_metric('syncthing.stats.device.last_seen', tags=dtags)
         aggregator.assert_metric('syncthing.stats.device.last_connection_duration', tags=dtags)
 

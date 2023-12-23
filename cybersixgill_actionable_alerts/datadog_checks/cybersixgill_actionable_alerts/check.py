@@ -28,11 +28,9 @@ class CybersixgillActionableAlertsCheck(AgentCheck):
         organization_id = self.instance.get('organization_id')
         if not threat_level:
             threat_level = None
-        threat_type_list = None
         if not organization_id:
             organization_id = None
-        if threat_type:
-            threat_type_list = threat_type.split(", ")
+        threat_type_list = threat_type.split(", ") if threat_type else None
         try:
             file_dir = os.path.dirname(__file__)
             abs_file_path = os.path.join(file_dir, "date_threshold.txt")
@@ -133,9 +131,8 @@ class CybersixgillActionableAlertsCheck(AgentCheck):
                 last_alert_time = alert_info.get("create_time")
                 # self.write_persistent_cache("from_date", last_alert_time)
                 time_dict = {'from_date': last_alert_time}
-                txt_file_update = open(abs_file_path, 'w')
-                txt_file_update.write(json.dumps(time_dict))
-                txt_file_update.close()
+                with open(abs_file_path, 'w') as txt_file_update:
+                    txt_file_update.write(json.dumps(time_dict))
             self.service_check(self.SERVICE_CHECK_CONNECT_NAME, AgentCheck.OK)
             self.service_check(self.SERVICE_CHECK_HEALTH_NAME, AgentCheck.OK)
         except (Timeout, HTTPError, ConnectionError) as e:

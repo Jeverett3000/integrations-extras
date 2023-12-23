@@ -36,11 +36,11 @@ class LighthouseCheck(AgentCheck):
                 "--output",
                 "json",
                 "--quiet",
-                "--chrome-flags='{}'".format(" ".join(CHROME_FLAGS + extra_chrome_flags)),
+                f"""--chrome-flags='{" ".join(CHROME_FLAGS + extra_chrome_flags)}'""",
             ]
 
             if form_factor:
-                cmd.append("--form-factor=" + form_factor)
+                cmd.append(f"--form-factor={form_factor}")
                 if form_factor == "desktop":
                     cmd.append("--preset=desktop")
 

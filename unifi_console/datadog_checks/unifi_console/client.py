@@ -44,7 +44,7 @@ class Client:
         for t in tags:
             tag_value = get_by_path(client_info, t["value"])
             if tag_value is not None:
-                self.tags.append("{}:{}".format(t["key"], tag_value))
+                self.tags.append(f'{t["key"]}:{tag_value}')
 
     def _get_metrics(self, client_info: dict) -> None:
         self.metrics = []

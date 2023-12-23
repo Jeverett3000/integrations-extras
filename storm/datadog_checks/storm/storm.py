@@ -47,20 +47,18 @@ def _g(stat_map, default, func, *components):
                 value = value[component]
             else:
                 return default
+        elif component in value:
+            value = value[component]
         else:
-            if component not in value:
-                return default
-            else:
-                value = value[component]
-    if value not in (None, ''):
-        if func is not None:
-            try:
-                return func(value)
-            except Exception:
-                return default
-        return value
-    else:
+            return default
+    if value in (None, ''):
         return default
+    if func is not None:
+        try:
+            return func(value)
+        except Exception:
+            return default
+    return value
 
 
 def _float(v):
@@ -170,10 +168,7 @@ def _get_list(stat_map, *components):
     :rtype: list
     """
     val = _g(stat_map, [], None, *components)
-    if not val or not isinstance(val, list):
-        return []
-
-    return val
+    return [] if not val or not isinstance(val, list) else val
 
 
 def _get_dict(stat_map, *components):
@@ -186,10 +181,7 @@ def _get_dict(stat_map, *components):
     """
     val = _g(stat_map, {}, None, *components)
 
-    if not val or not isinstance(val, dict):
-        return {}
-
-    return val
+    return {} if not val or not isinstance(val, dict) else val
 
 
 class StormCheck(AgentCheck):
@@ -246,7 +238,7 @@ class StormCheck(AgentCheck):
             return True
 
     def get_request_json(self, url_part, error_message, params=None):
-        url = "{}{}".format(self.nimbus_server, url_part)
+        url = f"{self.nimbus_server}{url_part}"
         try:
             self.log.debug("Fetching url %s", url)
             if params:
@@ -316,8 +308,8 @@ class StormCheck(AgentCheck):
         self.log.debug("Retrieving Topology Info. Id: %s", topology_id)
         params = {'window': interval}
         return self.get_request_json(
-            "/api/v1/topology/{}".format(topology_id),
-            "Error retrieving Storm Topology Info for topology:{}".format(topology_id),
+            f"/api/v1/topology/{topology_id}",
+            f"Error retrieving Storm Topology Info for topology:{topology_id}",
             params=params,
         )
 
@@ -340,7 +332,7 @@ class StormCheck(AgentCheck):
         params = {'window': interval}
         return self.get_request_json(
             endpoint.format(topology_id),
-            "Error retrieving Storm Topology Metrics for topology:{}".format(topology_id),
+            f"Error retrieving Storm Topology Metrics for topology:{topology_id}",
             params=params,
         )
 
@@ -352,19 +344,20 @@ class StormCheck(AgentCheck):
         :return: Version info
         :rtype: StormCheck.StormVersion
         """
-        if len(cluster_stats) > 0:
-            version = (
-                _get_string(cluster_stats, _get_string(cluster_stats, 'unknown', 'stormVersion'), 'version')
-                .replace(' ', '_')
-                .lower()
-            )
-            storm_version = 'stormVersion:{}'.format(version)
-            tags = [storm_version]
-            if storm_version not in self.additional_tags:
-                self.additional_tags.append(storm_version)
+        if len(cluster_stats) <= 0:
+            return StormCheck.StormVersion(0, 0, 0)
+        version = (
+            _get_string(cluster_stats, _get_string(cluster_stats, 'unknown', 'stormVersion'), 'version')
+            .replace(' ', '_')
+            .lower()
+        )
+        storm_version = f'stormVersion:{version}'
+        tags = [storm_version]
+        if storm_version not in self.additional_tags:
+            self.additional_tags.append(storm_version)
 
             # Longs
-            for metric_name in [
+        for metric_name in [
                 'executorsTotal',
                 'slotsFree',
                 'slotsTotal',
@@ -373,14 +366,14 @@ class StormCheck(AgentCheck):
                 'tasksTotal',
                 'topologies',
             ]:
-                self.report_gauge(
-                    'storm.cluster.{}'.format(metric_name),
-                    _get_long(cluster_stats, 0, metric_name),
-                    tags=tags,
-                    additional_tags=self.additional_tags,
-                )
+            self.report_gauge(
+                f'storm.cluster.{metric_name}',
+                _get_long(cluster_stats, 0, metric_name),
+                tags=tags,
+                additional_tags=self.additional_tags,
+            )
             # Floats
-            for metric_name in [
+        for metric_name in [
                 'availCpu',
                 'availMem',
                 'cpuAssignedPercentUtil',
@@ -388,14 +381,13 @@ class StormCheck(AgentCheck):
                 'totalCpu',
                 'totalMem',
             ]:
-                self.report_gauge(
-                    'storm.cluster.{}'.format(metric_name),
-                    _get_float(cluster_stats, 0.0, metric_name),
-                    tags=tags,
-                    additional_tags=self.additional_tags,
-                )
-            return StormCheck.StormVersion.from_string(version)
-        return StormCheck.StormVersion(0, 0, 0)
+            self.report_gauge(
+                f'storm.cluster.{metric_name}',
+                _get_float(cluster_stats, 0.0, metric_name),
+                tags=tags,
+                additional_tags=self.additional_tags,
+            )
+        return StormCheck.StormVersion.from_string(version)
 
     def process_nimbus_stats(self, nimbus_stats):
         """Process Nimbus Stats Response
@@ -405,37 +397,38 @@ class StormCheck(AgentCheck):
         :return: Extracted nimbus stats metrics
         :rtype: dict
         """
-        if nimbus_stats:
-            numLeaders = 0
-            numFollowers = 0
-            numDead = 0
-            numOffline = 0
-            for ns in nimbus_stats.get('nimbuses', []):
-                nimbus_status = _get_string(ns, 'offline', 'status').lower()
-                storm_host = _get_string(ns, 'unknown', 'host')
-                tags = ['stormHost:{}'.format(storm_host), 'stormStatus:{}'.format(nimbus_status)]
+        if not nimbus_stats:
+            return
+        numLeaders = 0
+        numFollowers = 0
+        numDead = 0
+        numOffline = 0
+        for ns in nimbus_stats.get('nimbuses', []):
+            nimbus_status = _get_string(ns, 'offline', 'status').lower()
+            storm_host = _get_string(ns, 'unknown', 'host')
+            tags = [f'stormHost:{storm_host}', f'stormStatus:{nimbus_status}']
 
-                if nimbus_status == 'offline':
-                    numOffline += 1
-                elif nimbus_status == 'leader':
-                    numLeaders += 1
-                elif nimbus_status == 'dead':
-                    numDead += 1
-                else:
-                    numFollowers += 1
+            if nimbus_status == 'dead':
+                numDead += 1
+            elif nimbus_status == 'leader':
+                numLeaders += 1
+            elif nimbus_status == 'offline':
+                numOffline += 1
+            else:
+                numFollowers += 1
 
-                self.report_gauge(
-                    'storm.nimbus.upTimeSeconds',
-                    _get_long(ns, 0, 'nimbusUpTimeSeconds'),
-                    tags=tags,
-                    additional_tags=self.additional_tags,
-                )
-            self.report_gauge('storm.nimbus.numDead', numDead, tags=tags, additional_tags=self.additional_tags)
             self.report_gauge(
-                'storm.nimbus.numFollowers', numFollowers, tags=tags, additional_tags=self.additional_tags
+                'storm.nimbus.upTimeSeconds',
+                _get_long(ns, 0, 'nimbusUpTimeSeconds'),
+                tags=tags,
+                additional_tags=self.additional_tags,
             )
-            self.report_gauge('storm.nimbus.numLeaders', numLeaders, tags=tags, additional_tags=self.additional_tags)
-            self.report_gauge('storm.nimbus.numOffline', numOffline, tags=tags, additional_tags=self.additional_tags)
+        self.report_gauge('storm.nimbus.numDead', numDead, tags=tags, additional_tags=self.additional_tags)
+        self.report_gauge(
+            'storm.nimbus.numFollowers', numFollowers, tags=tags, additional_tags=self.additional_tags
+        )
+        self.report_gauge('storm.nimbus.numLeaders', numLeaders, tags=tags, additional_tags=self.additional_tags)
+        self.report_gauge('storm.nimbus.numOffline', numOffline, tags=tags, additional_tags=self.additional_tags)
 
     def process_supervisor_stats(self, supervisor_stats):
         """Process Supervisor Stats Response
@@ -449,11 +442,11 @@ class StormCheck(AgentCheck):
             for ss in _get_list(supervisor_stats, 'supervisors'):
                 host = _get_string(ss, 'unknown', 'host')
                 storm_id = _get_string(ss, 'unknown', 'id')
-                tags = ['stormHost:{}'.format(host), 'stormSupervisorId:{}'.format(storm_id)]
+                tags = [f'stormHost:{host}', f'stormSupervisorId:{storm_id}']
                 # longs
                 for metric_name in ['slotsTotal', 'slotsUsed', 'uptimeSeconds']:
                     self.report_gauge(
-                        'storm.supervisor.{}'.format(metric_name),
+                        f'storm.supervisor.{metric_name}',
                         _get_long(ss, 0, metric_name),
                         tags=tags,
                         additional_tags=self.additional_tags,
@@ -461,7 +454,7 @@ class StormCheck(AgentCheck):
                 # floats
                 for metric_name in ['totalCpu', 'totalMem', 'usedCpu', 'usedMem']:
                     self.report_gauge(
-                        'storm.supervisor.{}'.format(metric_name),
+                        f'storm.supervisor.{metric_name}',
                         _get_float(ss, 0, metric_name),
                         tags=tags,
                         additional_tags=self.additional_tags,
@@ -759,14 +752,15 @@ class StormCheck(AgentCheck):
         :param interval: Interval in seconds for reported metrics
         :type interval: int
         """
-        if topology_stats:
-            name = topology_name.replace('.', '_').replace(':', '_')
-            tags = ['topology:{}'.format(name)]
-            for k in ('bolts', 'spouts'):
-                for s in _get_list(topology_stats, k):
-                    k_name = _get_string(s, 'unknown', 'id').replace('.', '_').replace(':', '_')
-                    k_tags = tags + ['{}:{}'.format(k, k_name)]
-                    for sc in [
+        if not topology_stats:
+            return
+        name = topology_name.replace('.', '_').replace(':', '_')
+        tags = [f'topology:{name}']
+        for k in ('bolts', 'spouts'):
+            for s in _get_list(topology_stats, k):
+                k_name = _get_string(s, 'unknown', 'id').replace('.', '_').replace(':', '_')
+                k_tags = tags + [f'{k}:{k_name}']
+                for sc in [
                         'acked',
                         'complete_ms_avg',
                         'emitted',
@@ -776,24 +770,23 @@ class StormCheck(AgentCheck):
                         'process_ms_avg',
                         'transferred',
                     ]:
-                        for ks in _get_list(s, sc):
-                            stream_id = _get_string(ks, 'unknown', 'stream_id')
-                            ks_tags = k_tags + ['stream:{}'.format(stream_id)]
-                            component_id = ks.get('component_id')
-                            if component_id:
-                                ks_tags.append('component:{}'.format(component_id))
+                    for ks in _get_list(s, sc):
+                        stream_id = _get_string(ks, 'unknown', 'stream_id')
+                        ks_tags = k_tags + [f'stream:{stream_id}']
+                        if component_id := ks.get('component_id'):
+                            ks_tags.append(f'component:{component_id}')
 
-                            component_value = _get_float(ks, 0.0, 'value')
-                            if component_value is not None:
+                        component_value = _get_float(ks, 0.0, 'value')
+                        if component_value is not None:
                                 # will make stats like these two examples
                                 # storm.topologyStats.metrics.spouts.last_60.emitted
                                 # storm.topologyStatus.metrics.bolts.last_60.acked
-                                self.report_histogram(
-                                    'storm.topologyStats.metrics.{}.last_{}.{}'.format(k, interval, sc),
-                                    component_value,
-                                    tags=ks_tags,
-                                    additional_tags=self.additional_tags,
-                                )
+                            self.report_histogram(
+                                f'storm.topologyStats.metrics.{k}.last_{interval}.{sc}',
+                                component_value,
+                                tags=ks_tags,
+                                additional_tags=self.additional_tags,
+                            )
 
     def report_gauge(self, metric, value, tags, additional_tags):
         """Report the Gauge Metric.
@@ -805,7 +798,7 @@ class StormCheck(AgentCheck):
         :return:
         """
         all_tags = set(tags)
-        all_tags.add('stormEnvironment:{}'.format(self.environment_name))
+        all_tags.add(f'stormEnvironment:{self.environment_name}')
         all_tags.update(additional_tags)
         self.gauge(metric, value=value, tags=all_tags)
 
@@ -819,7 +812,7 @@ class StormCheck(AgentCheck):
         :return:
         """
         all_tags = set(tags)
-        all_tags.add('stormEnvironment:{}'.format(self.environment_name))
+        all_tags.add(f'stormEnvironment:{self.environment_name}')
         all_tags.update(additional_tags)
         self.histogram(metric, value=value, tags=all_tags)
 
@@ -896,12 +889,15 @@ class StormCheck(AgentCheck):
                         if topology_status is None:
                             topology_status = _get_string(stats, 'unknown', 'status').upper()
                             check_status = AgentCheck.CRITICAL if topology_status != 'ACTIVE' else AgentCheck.OK
-                            topology_message = '{} topology status marked as: {}'.format(topology_name, topology_status)
+                            topology_message = f'{topology_name} topology status marked as: {topology_status}'
                             self.service_check(
-                                'topology_check.{}'.format(topology_name),
+                                f'topology_check.{topology_name}',
                                 status=check_status,
-                                message=topology_message if check_status != AgentCheck.OK else "",
-                                tags=['stormEnvironment:{}'.format(self.environment_name)] + self.additional_tags,
+                                message=topology_message
+                                if check_status != AgentCheck.OK
+                                else "",
+                                tags=[f'stormEnvironment:{self.environment_name}']
+                                + self.additional_tags,
                             )
                     except Exception:  # noqa
                         self.log.exception(

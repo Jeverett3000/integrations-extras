@@ -77,7 +77,7 @@ class Unifi:
             )
             resp.raise_for_status()
         except Exception as e:
-            err_msg = "Connection to {} failed: {}".format(self.__path(APILoginPath), e)
+            err_msg = f"Connection to {self.__path(APILoginPath)} failed: {e}"
             raise APIConnectionError(err_msg) from None
 
     def status(self) -> ControllerInfo:
@@ -95,7 +95,7 @@ class Unifi:
 
             if assetType == "uap":
                 devices.append(UAP(dev))
-            elif assetType == "ugw" or assetType == "usg":  # in case they ever fix the name in the api.
+            elif assetType in ["ugw", "usg"]:  # in case they ever fix the name in the api.
                 devices.append(USG(dev))
             elif assetType == "usw":
                 devices.append(USW(dev))
@@ -110,11 +110,7 @@ class Unifi:
     def get_clients_info(self) -> List[Client]:
         resp = self._get_json(self.__path(APIClientPath.format(self.config.site)))
 
-        clients: List[Client] = []
-
-        for cli in resp["data"]:
-            clients.append(Client(cli))
-
+        clients: List[Client] = [Client(cli) for cli in resp["data"]]
         return clients
 
     def __checkNewStyleAPI(self):
@@ -128,7 +124,7 @@ class Unifi:
         self.log.debug("Requesting %s/ to determine API paths", self.config.url)
         try:
             requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
-            resp = requests.get(self.config.url + "/", verify=False, allow_redirects=False)
+            resp = requests.get(f"{self.config.url}/", verify=False, allow_redirects=False)
             resp.raise_for_status()
             if resp.status_code == 200:
                 self.new = True

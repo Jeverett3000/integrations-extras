@@ -30,7 +30,7 @@ class UnboundCheck(AgentCheck):
             command.append('sudo')
 
         if not which(unbound_control, use_sudo, self.log):
-            raise ConfigurationError('executable not found: {}'.format(unbound_control))
+            raise ConfigurationError(f'executable not found: {unbound_control}')
 
         command.extend((unbound_control, stats_command))
         if host:
@@ -54,7 +54,7 @@ class UnboundCheck(AgentCheck):
 
         if not data:
             self.service_check(self.SERVICE_CHECK_NAME, AgentCheck.CRITICAL, message="unable to parse stats", tags=tags)
-            raise Exception("unable to parse output '{}'".format(ub_out))
+            raise Exception(f"unable to parse output '{ub_out}'")
 
         self.service_check(self.SERVICE_CHECK_NAME, AgentCheck.OK, tags=tags)
 
@@ -64,20 +64,19 @@ class UnboundCheck(AgentCheck):
             # Some metric names from unbound make more sense to record as name + tag in datadog.
             metric_name, all_tags = self.metric_name_to_tags(stat[0], tags)
 
-            unbound_metric_name = 'unbound.{}'.format(metric_name)
+            unbound_metric_name = f'unbound.{metric_name}'
 
             if 'histogram' in metric_name:  # dont send histogram metrics
                 self.log.debug('unbound.%s:%s', unbound_metric_name, stat[1])
+            elif any(count in metric_name for count in ['num.', 'unwanted', '.count']):
+                self.log.debug('count: %s', stat)
+                self.count(unbound_metric_name, stat[1], tags=all_tags)
+            elif 'time.' in metric_name:
+                self.log.debug('gauge (time): %s', stat)
+                self.gauge(unbound_metric_name, float(stat[1]), tags=all_tags)
             else:
-                if any(count in metric_name for count in ['num.', 'unwanted', '.count']):
-                    self.log.debug('count: %s', stat)
-                    self.count(unbound_metric_name, stat[1], tags=all_tags)
-                elif 'time.' in metric_name:
-                    self.log.debug('gauge (time): %s', stat)
-                    self.gauge(unbound_metric_name, float(stat[1]), tags=all_tags)
-                else:
-                    self.log.debug('gauge: %s', stat)
-                    self.gauge(unbound_metric_name, float(stat[1]), tags=all_tags)
+                self.log.debug('gauge: %s', stat)
+                self.gauge(unbound_metric_name, float(stat[1]), tags=all_tags)
 
     def call_unbound_control(self, command, tags):
         try:
@@ -87,7 +86,7 @@ class UnboundCheck(AgentCheck):
             self.service_check(
                 self.SERVICE_CHECK_NAME, AgentCheck.CRITICAL, message="exception collecting stats", tags=tags
             )
-            raise Exception("Unable to get unbound stats: {}".format(str(e)))
+            raise Exception(f"Unable to get unbound stats: {str(e)}")
 
         for line in ub_err.splitlines():
             self.log.debug('stderr from %s: %s', command, line)
@@ -97,12 +96,12 @@ class UnboundCheck(AgentCheck):
             self.service_check(
                 self.SERVICE_CHECK_NAME, AgentCheck.CRITICAL, message="non-zero return code collecting stats", tags=tags
             )
-            raise Exception('"{}" failed, return code: {}'.format(command, returncode))
+            raise Exception(f'"{command}" failed, return code: {returncode}')
 
         # And because we pass raise_on_empty_output as False, check that too
         if not ub_out:
             self.service_check(self.SERVICE_CHECK_NAME, AgentCheck.CRITICAL, message="no stats", tags=tags)
-            raise Exception('no output from "{}"'.format(command))
+            raise Exception(f'no output from "{command}"')
 
         return ub_out
 
@@ -116,13 +115,17 @@ class UnboundCheck(AgentCheck):
             'num.answer.rcode': self.answer_rcode_handler,
         }
 
-        handlers = [TAG_HANDLERS[prefix] for prefix in TAG_HANDLERS.keys() if metric_name.startswith(prefix)]
+        handlers = [
+            TAG_HANDLERS[prefix]
+            for prefix in TAG_HANDLERS
+            if metric_name.startswith(prefix)
+        ]
         num_handlers = len(handlers)
         if num_handlers == 0:
             return None
         if num_handlers == 1:
             return handlers[0]
-        raise Exception("more than one handler for '" + metric_name + "': " + handlers)
+        raise Exception(f"more than one handler for '{metric_name}': {handlers}")
 
     def query_type_handler(self, metric_name, tags):
         # Split out the query type from the rest of the metric name
@@ -132,7 +135,7 @@ class UnboundCheck(AgentCheck):
         orig_metric_name = metric_name
         metric_name = metric_name_parts[0]
 
-        all_tags = tags + ['query_type:' + query_type]
+        all_tags = tags + [f'query_type:{query_type}']
         self.log.debug(
             'translating query type metric %s to %s (query_type: %s)', orig_metric_name, metric_name, query_type
         )
@@ -148,7 +151,7 @@ class UnboundCheck(AgentCheck):
         orig_metric_name = metric_name
         metric_name = metric_name_parts[0]
 
-        all_tags = tags + ['query_class:' + query_class]
+        all_tags = tags + [f'query_class:{query_class}']
         self.log.debug(
             'translating query class metric %s to %s (query_class: %s)', orig_metric_name, metric_name, query_class
         )
@@ -164,7 +167,7 @@ class UnboundCheck(AgentCheck):
         orig_metric_name = metric_name
         metric_name = metric_name_parts[0]
 
-        all_tags = tags + ['opcode:' + opcode]
+        all_tags = tags + [f'opcode:{opcode}']
         self.log.debug('translating query opcode metric %s to %s (opcode: %s)', orig_metric_name, metric_name, opcode)
         self.log.debug('all_tags: %s', all_tags)
 
@@ -178,7 +181,7 @@ class UnboundCheck(AgentCheck):
         orig_metric_name = metric_name
         metric_name = metric_name_parts[0]
 
-        all_tags = tags + ['flag:' + flag]
+        all_tags = tags + [f'flag:{flag}']
         self.log.debug('translating query flag metric %s to %s (flag: %s)', orig_metric_name, metric_name, flag)
         self.log.debug('all_tags: %s', all_tags)
 
@@ -197,7 +200,7 @@ class UnboundCheck(AgentCheck):
         orig_metric_name = metric_name
         metric_name = metric_name_parts[0]
 
-        all_tags = tags + ['rcode:' + rcode]
+        all_tags = tags + [f'rcode:{rcode}']
         self.log.debug('translating num.answer.rcode %s to %s (rcode: %s)', orig_metric_name, metric_name, rcode)
         self.log.debug('all_tags: %s', all_tags)
 
@@ -218,10 +221,10 @@ class UnboundCheck(AgentCheck):
 
         # Rebuild the metric name without the thread number
         orig_metric_name = metric_name
-        metric_name = 'thread.' + metric_name_parts[1]
+        metric_name = f'thread.{metric_name_parts[1]}'
 
         # Add the thread number as a tag
-        all_tags = tags + ['thread:' + thread_num]
+        all_tags = tags + [f'thread:{thread_num}']
 
         self.log.debug('translating thread metric %s to %s (thread_num: %s)', orig_metric_name, metric_name, thread_num)
         self.log.debug('all_tags: %s', all_tags)
@@ -284,4 +287,4 @@ def hostname_to_ip(hostname):
     strs = hostname.split("@")
     ip_address = socket.gethostbyname(strs[0])
 
-    return ip_address + '@' + strs[1]
+    return f'{ip_address}@{strs[1]}'

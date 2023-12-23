@@ -7,11 +7,13 @@ from . import common
 
 
 def ping_traefik():
-    response = requests.get('{}://{}:{}/health'.format(common.SCHEME, common.HOST, common.PORT))
+    response = requests.get(
+        f'{common.SCHEME}://{common.HOST}:{common.PORT}/health'
+    )
     response.raise_for_status()
 
     # Trigger a 404
-    requests.get('http://{}:800'.format(common.HOST))
+    requests.get(f'http://{common.HOST}:800')
 
 
 @pytest.fixture(scope='session')

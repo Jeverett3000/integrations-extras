@@ -67,7 +67,7 @@ def test_unbound_control_exception(aggregator, mock_which):
     with mock.patch('datadog_checks.unbound.unbound.get_subprocess_output') as mock_unbound:
         message = 'arbitrary exception'
         mock_unbound.side_effect = Exception(message)
-        with pytest.raises(Exception, match='Unable to get unbound stats: {}'.format(message)):
+        with pytest.raises(Exception, match=f'Unable to get unbound stats: {message}'):
             check.check({})
     aggregator.assert_service_check(UnboundCheck.SERVICE_CHECK_NAME, status=AgentCheck.CRITICAL)
 
@@ -76,7 +76,7 @@ def test_unbound_control_non_zero_return_code(aggregator, mock_which):
     check = UnboundCheck('unbound', {}, {})
     return_code = 1
     with mock.patch('datadog_checks.unbound.unbound.get_subprocess_output', return_value=('', '', return_code)):
-        with pytest.raises(Exception, match='failed, return code: {}'.format(return_code)):
+        with pytest.raises(Exception, match=f'failed, return code: {return_code}'):
             check.check({})
     aggregator.assert_service_check(UnboundCheck.SERVICE_CHECK_NAME, status=AgentCheck.CRITICAL)
 
@@ -93,7 +93,7 @@ def test_wacky_output(aggregator, mock_which):
     check = UnboundCheck('unbound', {}, {})
     output = 'foo'
     with mock.patch('datadog_checks.unbound.unbound.get_subprocess_output', return_value=(output, '', 0)):
-        with pytest.raises(Exception, match="unable to parse output '{}'".format(output)):
+        with pytest.raises(Exception, match=f"unable to parse output '{output}'"):
             check.check({})
     aggregator.assert_service_check(UnboundCheck.SERVICE_CHECK_NAME, status=AgentCheck.CRITICAL)
 

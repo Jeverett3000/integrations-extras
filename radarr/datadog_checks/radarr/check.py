@@ -39,7 +39,7 @@ class RadarrCheck(AgentCheck):
             self.service_check(
                 "can_connect",
                 AgentCheck.CRITICAL,
-                message="Request timeout: {}, {}".format(self.url, e),
+                message=f"Request timeout: {self.url}, {e}",
             )
             raise
 
@@ -47,7 +47,7 @@ class RadarrCheck(AgentCheck):
             self.service_check(
                 "can_connect",
                 AgentCheck.CRITICAL,
-                message="Request failed: {}, {}".format(self.url, e),
+                message=f"Request failed: {self.url}, {e}",
             )
             raise
 
@@ -55,7 +55,7 @@ class RadarrCheck(AgentCheck):
             self.service_check(
                 "can_connect",
                 AgentCheck.CRITICAL,
-                message="JSON Parse failed: {}, {}".format(self.url, e),
+                message=f"JSON Parse failed: {self.url}, {e}",
             )
             raise
 

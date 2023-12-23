@@ -58,7 +58,7 @@ class GoPprofScraperCheck(AgentCheck):
         if not self.url.endswith("/"):
             self.url += "/"
         self.hostname = urlparse(self.url).hostname
-        if self.hostname == "localhost" or self.hostname == "127.0.0.1":
+        if self.hostname in ["localhost", "127.0.0.1"]:
             self.hostname = socket.gethostname()
 
         self.duration = self.instance.get("duration", DEFAULT_PROFILE_DURATION)
@@ -67,7 +67,7 @@ class GoPprofScraperCheck(AgentCheck):
         for profile in self.profiles:
             if profile not in VALID_PROFILE_TYPES:
                 raise ConfigurationError(
-                    "{} is not a valid profile type, must be one of {}".format(profile, VALID_PROFILE_TYPES)
+                    f"{profile} is not a valid profile type, must be one of {VALID_PROFILE_TYPES}"
                 )
         self.profiles = list(set(self.profiles))
 
@@ -83,7 +83,9 @@ class GoPprofScraperCheck(AgentCheck):
         self.trace_agent_port = datadog_agent.get_config("apm_config.receiver_port")
         # XXX: Will the hostname ever *not* be localhost? I don't think so since
         # this is being run by the agent
-        self.trace_agent_url = "http://localhost:{}/profiling/v1/input".format(self.trace_agent_port)
+        self.trace_agent_url = (
+            f"http://localhost:{self.trace_agent_port}/profiling/v1/input"
+        )
 
         # If modifying UDS-related code, run the end-to-end tests with the
         # GO_PPROF_TEST_UDS environment variable defined so that the agent will
@@ -94,7 +96,7 @@ class GoPprofScraperCheck(AgentCheck):
             # requets_unixsocket expects the path to be URL-encoded. We pass
             # safe="" to quote so that the "/" are escaped.
             path = quote(self.trace_agent_socket, safe="")
-            self.trace_agent_socket = "http+unix://{}/profiling/v1/input".format(path)
+            self.trace_agent_socket = f"http+unix://{path}/profiling/v1/input"
 
     def _get_profile(self, profile):
         query_params = {}
@@ -124,10 +126,7 @@ class GoPprofScraperCheck(AgentCheck):
         )
 
         response.raise_for_status()
-        if profile == "cpu" or self.cumulative:
-            name = profile
-        else:
-            name = "delta-{}".format(profile)
+        name = profile if profile == "cpu" or self.cumulative else f"delta-{profile}"
         return name, response
 
     def check(self, _):
@@ -141,10 +140,10 @@ class GoPprofScraperCheck(AgentCheck):
                 profiles = list(executor.map(self._get_profile, self.profiles))
 
             files = [
-                # We want response.raw, because we're going to take the response
-                # and feed it straight into the profile upload (see
-                # self._get_profile)
-                ("data[%s.pprof]" % name, ("pprof-data", response.raw, "application/octet-stream"))
+                (
+                    f"data[{name}.pprof]",
+                    ("pprof-data", response.raw, "application/octet-stream"),
+                )
                 for name, response in profiles
             ]
 
@@ -186,21 +185,13 @@ class GoPprofScraperCheck(AgentCheck):
                 message="Request timeout: {}, {}".format(self.url, e),
             )
             raise
-        except (HTTPError, InvalidURL, ConnectionError) as e:
+        except (HTTPError, InvalidURL, Exception) as e:
             self.service_check(
                 "can_connect",
                 AgentCheck.CRITICAL,
                 message="Request failed: {}, {}".format(self.url, e),
             )
             raise
-        except Exception as e:
-            self.service_check(
-                "can_connect",
-                AgentCheck.CRITICAL,
-                message="Request failed: {}, {}".format(self.url, e),
-            )
-            raise
-
         # If your check ran successfully, you can send the status.
         # More info at
         # https://datadoghq.dev/integrations-core/base/api/#datadog_checks.base.checks.base.AgentCheck.service_check

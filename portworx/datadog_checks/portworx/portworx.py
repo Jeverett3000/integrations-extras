@@ -80,9 +80,5 @@ class PortworxCheck(PrometheusCheck):
 
         send_buckets = instance.get('send_histograms_buckets', True)
         # By default we send the buckets.
-        if send_buckets is not None and str(send_buckets).lower() == 'false':
-            send_buckets = False
-        else:
-            send_buckets = True
-
+        send_buckets = send_buckets is None or str(send_buckets).lower() != 'false'
         self.process(endpoint, send_histograms_buckets=send_buckets, instance=instance)

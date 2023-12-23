@@ -84,7 +84,7 @@ class SortdbCheck(AgentCheck):
                 self.SORTDB_SERVICE_CHECK,
                 AgentCheck.CRITICAL,
                 tags=instance_tags,
-                message="Request timeout: {}, {}".format(url, e),
+                message=f"Request timeout: {url}, {e}",
             )
             self.timeout_event(url, timeout, aggregation_key)
             raise
@@ -150,7 +150,7 @@ class SortdbCheck(AgentCheck):
                 'timestamp': int(time.time()),
                 'event_type': 'http_check',
                 'msg_title': 'URL timeout',
-                'msg_text': '%s timed out after %s seconds.' % (url, timeout),
+                'msg_text': f'{url} timed out after {timeout} seconds.',
                 'aggregation_key': aggregation_key,
             }
         )

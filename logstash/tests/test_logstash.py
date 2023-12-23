@@ -97,7 +97,7 @@ CHECK_NAME = 'logstash'
 
 @pytest.mark.usefixtures('dd_environment')
 def test_failed_connection(aggregator):
-    bad_sc_tags = ['host:{}'.format(HOST), 'port:{}'.format(BAD_PORT)]
+    bad_sc_tags = [f'host:{HOST}', f'port:{BAD_PORT}']
 
     check = LogstashCheck(CHECK_NAME, {}, [BAD_INSTANCE])
     with pytest.raises(requests.exceptions.ConnectionError):
@@ -112,7 +112,7 @@ def test_check(aggregator):
     check = LogstashCheck(CHECK_NAME, {}, [GOOD_INSTANCE])
 
     check.check(GOOD_INSTANCE)
-    default_tags = ["url:{}".format(URL)]
+    default_tags = [f"url:{URL}"]
 
     instance_config = check.get_instance_config(GOOD_INSTANCE)
 
@@ -135,7 +135,7 @@ def test_check(aggregator):
     if is_multi_pipeline:
         expected_metrics.update(PIPELINE_QUEUE_METRICS)
 
-    good_sc_tags = ['host:{}'.format(HOST), 'port:{}'.format(PORT)]
+    good_sc_tags = [f'host:{HOST}', f'port:{PORT}']
 
     pipeline_metrics = dict(PIPELINE_METRICS, **PIPELINE_INPUTS_METRICS)
     pipeline_metrics.update(PIPELINE_FILTERS_METRICS)
@@ -149,11 +149,11 @@ def test_check(aggregator):
             metric_tags = metric_tags + output_tag
         if metric_name in PIPELINE_FILTERS_METRICS:
             metric_tags = metric_tags + filter_tag
-        is_pipeline_queue_metric = metric_name in PIPELINE_QUEUE_METRICS
-
-        is_pipeline_metric = metric_name in pipeline_metrics
-
         if desc[0] == "gauge":
+            is_pipeline_queue_metric = metric_name in PIPELINE_QUEUE_METRICS
+
+            is_pipeline_metric = metric_name in pipeline_metrics
+
             if is_multi_pipeline and is_pipeline_metric:
                 aggregator.assert_metric(metric_name, count=1, tags=metric_tags + [u'pipeline_name:main'])
                 aggregator.assert_metric(metric_name, count=1, tags=metric_tags + [u'pipeline_name:second_pipeline'])

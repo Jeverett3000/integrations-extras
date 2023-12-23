@@ -42,7 +42,7 @@ class EventStoreCheck(AgentCheck):
         for endpoint in endpoints_def:
             metrics = metric_def.get(endpoint)
             if metrics is None:
-                raise CheckException('Unknown metric endpoint: {}'.format(endpoint))
+                raise CheckException(f'Unknown metric endpoint: {endpoint}')
             self.check_endpoint(instance, endpoint, metrics)
 
     def check_endpoint(self, instance, endpoint, metrics):
@@ -56,19 +56,23 @@ class EventStoreCheck(AgentCheck):
         try:
             r = self.http.get(url)
         except requests.exceptions.Timeout:
-            raise CheckException('URL: {} timed out after {} seconds.'.format(url, self.http.options['timeout'][0]))
+            raise CheckException(
+                f"URL: {url} timed out after {self.http.options['timeout'][0]} seconds."
+            )
         except requests.exceptions.MissingSchema as e:
             raise CheckException(e)
         except requests.exceptions.ConnectionError as e:
             raise CheckException(e)
         # Bad HTTP code
         if r.status_code != 200:
-            raise CheckException('Invalid Status Code, {} returned a status of {}.'.format(url, r.status_code))
+            raise CheckException(
+                f'Invalid Status Code, {url} returned a status of {r.status_code}.'
+            )
         # Unable to deserialize the returned data
         try:
             parsed_api = r.json()
         except Exception as e:
-            raise CheckException('{} returned an unserializable payload: {}'.format(url, e))
+            raise CheckException(f'{url} returned an unserializable payload: {e}')
 
         eventstore_paths = self.walk(parsed_api)
         self.log.debug("Event Store Paths:")
@@ -91,8 +95,8 @@ class EventStoreCheck(AgentCheck):
                 metric_builder['json_path'] = path
                 tag_builder = []
                 if tag_by_url:
-                    tag_builder.append('instance:{}'.format(url))
-                tag_builder.append('name:{}'.format(name_tag))
+                    tag_builder.append(f'instance:{url}')
+                tag_builder.append(f'name:{name_tag}')
                 for tag in tags:
                     if ':' in tag:
                         # example: projection:projections.*.effectiveName
@@ -103,7 +107,7 @@ class EventStoreCheck(AgentCheck):
                         tag_path = self.get_tag_path(tag, path, eventstore_paths)
                         tag_name = self.format_tag(tag_path.split('.')[-1])
                     tag_value = self.get_value(parsed_api, tag_path)
-                    tag_builder.append('{}:{}'.format(tag_name, tag_value))
+                    tag_builder.append(f'{tag_name}:{tag_value}')
                 metric_builder['tag_by'] = tag_builder
                 metric_definitions[path].append(metric_builder)
 
@@ -153,15 +157,14 @@ class EventStoreCheck(AgentCheck):
             json_obj = {str(k): v for k, v in enumerate(json_obj)}
 
         for key, value in json_obj.items():
+            # We add the instance to the path global variable to build up a map
+            p.append(key)
             if isinstance(value, (dict, list)):
-                # We add the instance to the path global variable to build up a map
-                p.append(key)
                 self.walk(value, p, es_paths)
                 # Once we have finished with this path we remove it from the global variable
                 p.pop()
             else:
-                p.append(key)
-                tmp = "{}".format(".".join(p))
+                tmp = f'{".".join(p)}'
                 p.pop()
                 # Add the full key name to the "flat" global variable
                 if tmp not in es_paths:
@@ -237,7 +240,15 @@ class EventStoreCheck(AgentCheck):
         """Returns the metric formatted in the specified value"""
         data_type = metric['json_type']
         v = None
-        if data_type == 'float':
+        if data_type == 'bool':
+            v = 1 if value else 0
+        elif data_type == 'datetime':
+            v = (
+                float(dt.total_seconds())
+                if (dt := self.convert_to_timedelta(value))
+                else float(0)
+            )
+        elif data_type == 'float':
             try:
                 v = float(value)
             except ValueError:
@@ -247,17 +258,8 @@ class EventStoreCheck(AgentCheck):
                 v = int(value)
             except ValueError:
                 v = None
-        elif data_type == 'datetime':
-            dt = self.convert_to_timedelta(value)
-            if dt:
-                v = float(dt.total_seconds())
-            else:
-                v = float(0)
-            # Convert to MS
         elif data_type == 'str':
             v = self.convert_str_to_gauge(value, metric)
-        elif data_type == 'bool':
-            v = 1 if value else 0
         return v
 
     def convert_str_to_gauge(self, value, metric):
@@ -301,8 +303,13 @@ class EventStoreCheck(AgentCheck):
             mins = self._regex_number_to_int(tmp, 3)
             secs = self._regex_number_to_int(tmp, 4)
             subsecs = self._regex_number_to_int(tmp, 5)
-            td = datetime.timedelta(days=days, seconds=secs, microseconds=subsecs, minutes=mins, hours=hours)
-            return td
+            return datetime.timedelta(
+                days=days,
+                seconds=secs,
+                microseconds=subsecs,
+                minutes=mins,
+                hours=hours,
+            )
         except AttributeError:
             self.log.info('Unable to convert %s to timedelta', string)
         except TypeError:

@@ -11,13 +11,8 @@ from . import common
 
 @pytest.fixture(scope='session')
 def dd_environment():
-    with docker_run(
-        common.COMPOSE_FILE,
-        endpoints=[
-            'http://{}:{}/metrics'.format(common.HOST, common.PORT),
-        ],
-    ):
-        yield {"openmetrics_endpoint": 'http://{}:{}/metrics'.format(common.HOST, common.PORT)}
+    with docker_run(common.COMPOSE_FILE, endpoints=[f'http://{common.HOST}:{common.PORT}/metrics']):
+        yield {"openmetrics_endpoint": f'http://{common.HOST}:{common.PORT}/metrics'}
 
 
 @pytest.fixture

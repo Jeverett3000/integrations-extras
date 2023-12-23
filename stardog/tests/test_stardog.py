@@ -23,7 +23,7 @@ def setup_module(module):
     global HTTP
     HTTP = HttpServerThread()
     HTTP.start()
-    INSTANCE["stardog_url"] = "http://localhost:{}".format(HTTP.port)
+    INSTANCE["stardog_url"] = f"http://localhost:{HTTP.port}"
 
 
 def teardown_module(module):
@@ -52,7 +52,7 @@ def test_check_all_metrics(aggregator):
         if db_match is not None:
             try:
                 db_name = db_match.group(2)
-                local_tags.append("database:%s" % db_name)
+                local_tags.append(f"database:{db_name}")
             except Exception:
                 continue
 
@@ -60,11 +60,11 @@ def test_check_all_metrics(aggregator):
             for sub_value in metric_value:
                 if sub_value in ("duration_units", "rate_units"):
                     continue
-                new_key = "stardog.%s.%s" % (metric_key, sub_value)
+                new_key = f"stardog.{metric_key}.{sub_value}"
                 metric_val = float(metric_value[sub_value])
                 aggregator.assert_metric(new_key, metric_type=0, count=1, value=metric_val, tags=local_tags)
         else:
-            new_key = "stardog.%s" % metric_key
+            new_key = f"stardog.{metric_key}"
             metric_val = float(metric_value[next(iter(metric_value))])
             aggregator.assert_metric(new_key, metric_type=0, count=1, value=metric_val, tags=local_tags)
     aggregator.assert_all_metrics_covered

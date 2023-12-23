@@ -5,7 +5,7 @@ import pytest
 from datadog_checks.dev import docker_run, get_docker_hostname, get_here
 
 INSTANCE = {
-    "grpc_server_address": "{}:50051".format(get_docker_hostname()),
+    "grpc_server_address": f"{get_docker_hostname()}:50051",
     "timeout": 1000,
     "rpc_header": ["want-health-check-response: SERVING"],
 }

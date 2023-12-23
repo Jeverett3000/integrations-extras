@@ -25,7 +25,7 @@ class PumaCheck(AgentCheck):
         metrics = self._extract_metrics(response)
 
         for (key, name, reporter) in METRICS:
-            reporter(self, 'puma.{}'.format(name), metrics[key], tags)
+            reporter(self, f'puma.{name}', metrics[key], tags)
 
     def _extract_metrics(self, response):
         metrics = {
@@ -65,7 +65,7 @@ class PumaCheck(AgentCheck):
         port = parsed_url.port or 80
         tags = instance.get('tags', [])
         service_check_name = 'puma.connection'
-        service_check_tags = ['host:%s' % host, 'port:%s' % port] + tags
+        service_check_tags = [f'host:{host}', f'port:{port}'] + tags
 
         try:
             self.log.debug("Querying URL: %s", url)

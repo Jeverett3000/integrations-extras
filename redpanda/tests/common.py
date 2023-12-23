@@ -6,7 +6,7 @@ HOST = get_docker_hostname()
 PORT = 9644
 
 INSTANCE_PORT = 9644
-INSTANCE_URL = "http://{}:{}/public_metrics".format(HOST, INSTANCE_PORT)
+INSTANCE_URL = f"http://{HOST}:{INSTANCE_PORT}/public_metrics"
 
 
 REDPANDA_VERSION = os.getenv('REDPANDA_VERSION')

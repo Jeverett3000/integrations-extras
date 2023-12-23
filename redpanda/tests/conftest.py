@@ -16,8 +16,7 @@ def dd_environment():
     compose_file = os.path.join(DOCKER_DIR, 'docker-compose.yaml')
 
     with docker_run(compose_file, log_patterns=[r'Successfully started Redpanda!']):
-        instances = {'instances': [{'openmetrics_endpoint': INSTANCE_URL}]}
-        yield instances
+        yield {'instances': [{'openmetrics_endpoint': INSTANCE_URL}]}
 
 
 @pytest.fixture(scope='session')

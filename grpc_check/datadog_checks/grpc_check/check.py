@@ -81,8 +81,8 @@ class GrpcCheck(AgentCheck):
         self.ca_cert = self.instance.get("ca_cert", "")
         self._validate_configuration()
         self.tags = self.instance.get("tags", [])
-        self.tags.append("grpc_server_address:{}".format(self.grpc_server_address))
-        self.tags.append("grpc_server_service:{}".format(self.grpc_server_service))
+        self.tags.append(f"grpc_server_address:{self.grpc_server_address}")
+        self.tags.append(f"grpc_server_service:{self.grpc_server_service}")
 
     def _validate_configuration(self):
         if not self.grpc_server_address:
@@ -173,11 +173,11 @@ class GrpcCheck(AgentCheck):
             self.log.error("failed to check: %s", str(e))
 
         if not response:
-            self.tags.append("status_code:{}".format(status_code.name))
+            self.tags.append(f"status_code:{status_code.name}")
             self._send_unhealthy()
             return
 
-        self.tags.append("status_code:{}".format(grpc.StatusCode.OK.name))
+        self.tags.append(f"status_code:{grpc.StatusCode.OK.name}")
         if response.status == health_pb2.HealthCheckResponse.SERVING:
             self.log.debug(
                 "grpc_server_address=%s, grpc_server_service=%s: healthy",

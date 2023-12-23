@@ -4,7 +4,7 @@ import pytest
 
 from datadog_checks.dev import docker_run, get_docker_hostname, get_here
 
-URL = 'http://{}:8000/opcache-dd-handler.php'.format(get_docker_hostname())
+URL = f'http://{get_docker_hostname()}:8000/opcache-dd-handler.php'
 INSTANCE = {'url': URL}
 
 

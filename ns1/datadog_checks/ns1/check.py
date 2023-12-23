@@ -74,7 +74,7 @@ class Ns1Check(AgentCheck):
                 raise
         # save counters for next run
         self.set_usage_count()
-        msg = 'NS1 metrics check run for NS1 API endpoint %s was successful' % self.api_endpoint
+        msg = f'NS1 metrics check run for NS1 API endpoint {self.api_endpoint} was successful'
         self.service_check(self.NS1_SERVICE_CHECK, AgentCheck.OK, message=msg)
 
     def get_pulsar_job_name_from_id(self, pulsar_job_id):
@@ -82,8 +82,7 @@ class Ns1Check(AgentCheck):
             for job in v[1]:
                 jobid = job["jobid"]
                 if jobid == pulsar_job_id:
-                    jobname = job["name"]
-                    return jobname
+                    return job["name"]
         return ""
 
     def create_url(self, metrics, query_params, networks):
@@ -102,10 +101,7 @@ class Ns1Check(AgentCheck):
                 checkUrl.update(self.ns1.get_zone_info_url(key, val))
                 checkUrl.update(self.ns1.get_plan_details_url(key, val))
             elif key == "ddi":
-                if val:
-                    scopegroups = self.get_ddi_scope_groups()
-                else:
-                    scopegroups = None
+                scopegroups = self.get_ddi_scope_groups() if val else None
                 checkUrl.update(self.ns1.get_ddi_url(key, val, scopegroups))
             elif key == "pulsar":
                 checkUrl.update(self.ns1.get_pulsar_url(query_params))
@@ -120,12 +116,7 @@ class Ns1Check(AgentCheck):
     def get_ddi_scope_groups(self):
         url = "{apiendpoint}/v1/dhcp/scopegroup".format(apiendpoint=self.api_endpoint)
         res = self.get_stats(url)
-        scopegroups = {}
-        for group in res:
-            group_id = group["id"]
-            group_name = group["name"]
-            scopegroups[group_id] = group_name
-        return scopegroups
+        return {group["id"]: group["name"] for group in res}
 
     def get_networks(self, networks):
         url = "{apiendpoint}/v1/networks".format(apiendpoint=self.api_endpoint)
@@ -154,13 +145,12 @@ class Ns1Check(AgentCheck):
             rtype = r["type"]
             if rtype != "NS":
                 recmap[domain] = rtype
-        if recmap and len(recmap) > 0:
+        if recmap:
             result.append(recmap)
         return result
 
     def get_usage_count(self):
-        cashedata = self.read_persistent_cache(self.NS1_CACHE_KEY)
-        if cashedata:
+        if cashedata := self.read_persistent_cache(self.NS1_CACHE_KEY):
             self.usage_count = json.loads(cashedata)
         else:
             self.usage_count = {"usage": [0, 0]}
@@ -186,7 +176,7 @@ class Ns1Check(AgentCheck):
                 res, status = self.extract_pulsar_response_time(result)
             elif "pulsar.availability" in key:
                 res, status = self.extract_pulsar_availability(result)
-            elif "pulsar.decisions" == key:
+            elif key == "pulsar.decisions":
                 res, status = self.extract_pulsar_count_by_job(key, result)
             elif "pulsar" in key:
                 res, status = self.extract_pulsar_count(key, result)
@@ -221,8 +211,6 @@ class Ns1Check(AgentCheck):
 
             for element in graphs:
                 graph = element["graph"]
-                jobtags = element["tags"]
-                jobid = jobtags["jobid"]
                 # sort graph array
                 # find last timestamp that is >= last time stamp saved in file
                 res = sorted(graph, key=lambda x: x[0], reverse=True)
@@ -231,12 +219,14 @@ class Ns1Check(AgentCheck):
                     curr_timestamp = res[0][0]
                     curr_count = res[0][1]
 
+                    jobtags = element["tags"]
+                    jobid = jobtags["jobid"]
                     # find this metric in usage count
-                    jobkey = key + "." + jobid
+                    jobkey = f"{key}.{jobid}"
                     if jobkey in self.usage_count:
                         prev_timestamp = self.usage_count[jobkey][0]
-                        prev_count = self.usage_count[jobkey][1]
                         if curr_timestamp == prev_timestamp:
+                            prev_count = self.usage_count[jobkey][1]
                             # don't submit count if it didn't increase
                             if curr_count >= prev_count:
                                 self.usage_count[jobkey] = [prev_timestamp, curr_count]
@@ -284,8 +274,8 @@ class Ns1Check(AgentCheck):
             # find this metric in usage count
             if key in self.usage_count:
                 prev_timestamp = self.usage_count[key][0]
-                prev_count = self.usage_count[key][1]
                 if curr_timestamp == prev_timestamp:
+                    prev_count = self.usage_count[key][1]
                     if curr_count >= prev_count:
                         self.usage_count[key] = [prev_timestamp, curr_count]
                         result = curr_count - prev_count
@@ -326,11 +316,7 @@ class Ns1Check(AgentCheck):
             for element in graphs:
                 graph = element["graph"]
                 res = sorted(graph, key=lambda x: x[0], reverse=True)
-                if res and len(res) > 0:
-                    percent_available = res[0][1]
-                    return percent_available, True
-                else:
-                    return None, False
+                return (res[0][1], True) if res and len(res) > 0 else (None, False)
         except Exception:
             return None, False
 
@@ -359,8 +345,8 @@ class Ns1Check(AgentCheck):
             # find this metric in usage count
             if key in self.usage_count:
                 prev_timestamp = self.usage_count[key][0]
-                prev_count = self.usage_count[key][1]
                 if curr_timestamp == prev_timestamp:
+                    prev_count = self.usage_count[key][1]
                     if curr_count >= prev_count:
                         self.usage_count[key] = [prev_timestamp, curr_count]
                         result = curr_count - prev_count
@@ -379,18 +365,17 @@ class Ns1Check(AgentCheck):
 
     def extract_records_ttl(self, jsonResult):
         try:
-            zoneTtl = {}
-            for zone in jsonResult["records"]:
-                zoneTtl[zone["domain"]] = zone["ttl"]
+            zoneTtl = {zone["domain"]: zone["ttl"] for zone in jsonResult["records"]}
             return zoneTtl, True
         except Exception:
             return None, False
 
     def extract_billing(self, jsonResult):
         try:
-            billing = {}
-            billing["usage"] = jsonResult["totals"]["queries"]
-            billing["limit"] = jsonResult["any"]["query_credit"]
+            billing = {
+                "usage": jsonResult["totals"]["queries"],
+                "limit": jsonResult["any"]["query_credit"],
+            }
             return billing, True
         except Exception:
             return None, False
@@ -404,15 +389,12 @@ class Ns1Check(AgentCheck):
             try:
                 response = self.http.get(url, extra_headers=self.headers, timeout=60)
                 response.raise_for_status()
-                response_json = response.json()
-
-                return response_json
-
+                return response.json()
             except Timeout as e:
                 self.service_check(
                     self.NS1_SERVICE_CHECK,
                     AgentCheck.CRITICAL,
-                    message="Request timeout: {}, {}".format(url, e),
+                    message=f"Request timeout: {url}, {e}",
                 )
                 raise
 
@@ -423,7 +405,7 @@ class Ns1Check(AgentCheck):
                         self.service_check(
                             self.NS1_SERVICE_CHECK,
                             AgentCheck.CRITICAL,
-                            message="Max retries reached: {}, giving up!".format(self.max_retry_attempts),
+                            message=f"Max retries reached: {self.max_retry_attempts}, giving up!",
                         )
                         raise
 
@@ -438,9 +420,7 @@ class Ns1Check(AgentCheck):
                             ratelimit_limit = 100
 
                         next_request_available_in_seconds = int(ratelimit_period) / int(ratelimit_limit)
-                        msg = "Rate limit reached, X-RateLimit-Period: {}, X-RateLimit-Limit: {}, sleeping: {}".format(
-                            ratelimit_period, ratelimit_limit, next_request_available_in_seconds
-                        )
+                        msg = f"Rate limit reached, X-RateLimit-Period: {ratelimit_period}, X-RateLimit-Limit: {ratelimit_limit}, sleeping: {next_request_available_in_seconds}"
                         self.log.warning(msg)
 
                         retry += 1
@@ -451,7 +431,7 @@ class Ns1Check(AgentCheck):
                 self.service_check(
                     self.NS1_SERVICE_CHECK,
                     AgentCheck.CRITICAL,
-                    message="Request failed: {}, {}".format(url, e),
+                    message=f"Request failed: {url}, {e}",
                 )
                 raise
 
@@ -459,7 +439,7 @@ class Ns1Check(AgentCheck):
                 self.service_check(
                     self.NS1_SERVICE_CHECK,
                     AgentCheck.CRITICAL,
-                    message="Request failed: {}, {}".format(url, e),
+                    message=f"Request failed: {url}, {e}",
                 )
                 raise
 
@@ -474,9 +454,7 @@ class Ns1Check(AgentCheck):
                 raise
 
     def remove_prefix(self, text, prefix):
-        if text.startswith(prefix):
-            return text[len(prefix) :]
-        return text
+        return text[len(prefix) :] if text.startswith(prefix) else text
 
     def send_metrics(self, metric_name, metric_value, tags, metric_type):
         msg = '{prefix} Metric: {name}, Value: {value}, Tag: {tag}, Type: {type}'.format(
@@ -509,9 +487,7 @@ class Ns1Check(AgentCheck):
                     self.gauge('ns1.{name}'.format(name=metric_name), v, tags)
                 elif metric_type == "count":
                     self.count('ns1.{name}.{record}'.format(name=metric_name, record=k), v, tags)
-        else:
-            # scalar value, just submit
-            if metric_type == "gauge":
-                self.gauge('ns1.{}'.format(metric_name), metric_value, tags)
-            elif metric_type == "count":
-                self.count('ns1.{}'.format(metric_name), metric_value, tags)
+        elif metric_type == "gauge":
+            self.gauge(f'ns1.{metric_name}', metric_value, tags)
+        elif metric_type == "count":
+            self.count(f'ns1.{metric_name}', metric_value, tags)

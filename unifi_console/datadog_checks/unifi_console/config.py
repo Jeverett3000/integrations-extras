@@ -6,4 +6,4 @@ class UnifiConfig(object):
         self.password = instance.get("pwd", "")
         self.site = instance.get("site", "default")
         self.version = instance.get("version", "")
-        self.tags = ["url:{}".format(self.url), "site:{}".format(self.site)] + instance.get("tags", [])
+        self.tags = [f"url:{self.url}", f"site:{self.site}"] + instance.get("tags", [])

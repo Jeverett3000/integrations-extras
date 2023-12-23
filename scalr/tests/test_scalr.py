@@ -69,7 +69,7 @@ def test_check(dd_run_check, aggregator, instance, requests_mock):
     dd_run_check(check)
 
     for metric_name in SCALR_ACCOUNT_METRICS:
-        aggregator.assert_metric('scalr.' + metric_name)
+        aggregator.assert_metric(f'scalr.{metric_name}')
 
     aggregator.assert_all_metrics_covered()
     aggregator.assert_metrics_using_metadata(get_metadata_metrics())

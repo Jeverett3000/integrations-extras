@@ -29,10 +29,7 @@ def test_check(aggregator, instance):
 
     lighthouse_check.check(instance)
 
-    tags = []
-    tags.append("url:{0}".format(instance["url"]))
-    tags.append("name:{0}".format(instance["name"]))
-
+    tags = ["url:{0}".format(instance["url"]), "name:{0}".format(instance["name"])]
     aggregator.assert_metric(name="lighthouse.accessibility", value=92, tags=tags)
     aggregator.assert_metric(name="lighthouse.best_practices", value=100, tags=tags)
     aggregator.assert_metric(name="lighthouse.performance", value=55, tags=tags)
@@ -72,7 +69,7 @@ def test_check_urls_tags(aggregator):
     lighthouse_check.check(instance)
 
     for url in instance["urls"]:
-        expected_tags = [common_tag, "url:" + url, "name:" + instance["name"]]
+        expected_tags = [common_tag, f"url:{url}", "name:" + instance["name"]]
         aggregator.assert_metric(name="lighthouse.accessibility", value=92, tags=expected_tags)
         aggregator.assert_metric(name="lighthouse.best_practices", value=100, tags=expected_tags)
         aggregator.assert_metric(name="lighthouse.performance", value=55, tags=expected_tags)

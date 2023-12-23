@@ -43,7 +43,7 @@ def test_check(aggregator, dd_environment):
 
     # Test metrics
     for symbol in TABULAR_OBJECTS[0]['symbols']:
-        metric_name = '{}.{}'.format(CHECK_NAME, symbol)
+        metric_name = f'{CHECK_NAME}.{symbol}'
         aggregator.assert_metric(metric_name, at_least=1)
         aggregator.assert_metric_has_tag(metric_name, CHECK_TAGS[0], at_least=1)
 
@@ -55,7 +55,7 @@ def test_check(aggregator, dd_environment):
                 aggregator.assert_metric_has_tag_prefix(metric_name, tag, at_least=1)
 
     # Test service check
-    svcchk_name = '{}.can_check'.format(CHECK_NAME)
+    svcchk_name = f'{CHECK_NAME}.can_check'
     aggregator.assert_service_check(
         svcchk_name, status=SnmpwalkCheck.OK, tags=[':'.join(CHECK_TAGS[0].split(':')[:-1])], count=1
     )

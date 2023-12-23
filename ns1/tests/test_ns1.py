@@ -309,9 +309,9 @@ def test_url_gen(aggregator, instance_1, requests_mock):
     # if check.query_params:
     query_params = check.query_params
     query_string = "?"
-    query_string = query_string + "period=" + query_params["pulsar_period"] + "&"
-    query_string = query_string + "geo=" + query_params["pulsar_geo"] + "&"
-    query_string = query_string + "asn=" + query_params["pulsar_asn"] + "&"
+    query_string = f"{query_string}period=" + query_params["pulsar_period"] + "&"
+    query_string = f"{query_string}geo=" + query_params["pulsar_geo"] + "&"
+    query_string = f"{query_string}asn=" + query_params["pulsar_asn"] + "&"
     query_string = query_string[:-1]
     assert query_string == "?period=1m&geo=*&asn=*"
     assert check.query_params["pulsar_period"] == "1m"

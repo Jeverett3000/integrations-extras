@@ -16,6 +16,7 @@ class RobustIntelligenceAiFirewallCheck(OpenMetricsBaseCheckV2):
         self.openmetrics_endpoint = self.instance.get('openmetrics_endpoint')
 
     def get_default_config(self):
-        default_config = {'openmetrics_endpoint': self.openmetrics_endpoint, 'metrics': METRIC_MAP}
-
-        return default_config
+        return {
+            'openmetrics_endpoint': self.openmetrics_endpoint,
+            'metrics': METRIC_MAP,
+        }

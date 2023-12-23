@@ -59,11 +59,7 @@ class MockProcess(object):
                 info["exitcode"] = self._exitcode
             if self._create_time:
                 info['started'] = datetime.datetime.fromtimestamp(self._create_time).strftime('%Y-%m-%d %H:%M:%S')
-            return "%s.%s(%s)" % (
-                self.__class__.__module__,
-                self.__class__.__name__,
-                ", ".join(["%s=%r" % (k, v) for k, v in info.items()]),
-            )
+            return f'{self.__class__.__module__}.{self.__class__.__name__}({", ".join(["%s=%r" % (k, v) for k, v in info.items()])})'
 
     __repr__ = __str__
 
@@ -91,13 +87,11 @@ class MockProcess(object):
         valid_names = {'pid', 'cmdline', 'create_time', 'name', 'status', 'ppid'}
         if attrs is not None:
             if not isinstance(attrs, (list, tuple, set, frozenset)):
-                raise TypeError("invalid attrs type %s" % type(attrs))
+                raise TypeError(f"invalid attrs type {type(attrs)}")
             attrs = set(attrs)
-            invalid_names = attrs - valid_names
-            if invalid_names:
+            if invalid_names := attrs - valid_names:
                 raise ValueError(
-                    "invalid attr name%s %s"
-                    % ("s" if len(invalid_names) > 1 else "", ", ".join(map(repr, invalid_names)))
+                    f'invalid attr name{"s" if len(invalid_names) > 1 else ""} {", ".join(map(repr, invalid_names))}'
                 )
 
         retdict = {}
@@ -128,7 +122,7 @@ class MockProcess(object):
         if self._gone or self._pid_reused:
             return False
         try:
-            return not (self != psutil.Process(self.pid))
+            return self == psutil.Process(self.pid)
         except psutil.ZombieProcess:
             # We should never get here as it's already handled in
             # Process.__init__; here just for extra safety.

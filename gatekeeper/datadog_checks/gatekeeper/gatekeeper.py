@@ -43,7 +43,7 @@ class GatekeeperCheck(OpenMetricsBaseCheck):
         if prometheus_url is None:
             raise ConfigurationError("Each instance must have a url to the metrics endpoint")
 
-        health_url = gatekeeper_url + "/healthz"
+        health_url = f"{gatekeeper_url}/healthz"
 
         # General service health
         self._http_check(health_url, 'gatekeeper.health')

@@ -37,33 +37,33 @@ APIPrefixNew = "/proxy/network"
 # APIAnomaliesPath returns site anomalies.
 APIAnomaliesPath = "/api/s/{}/stat/anomalies"
 APICommandPath = "/api/s/{}/cmd"
-APIDevMgrPath = APICommandPath + "/devmgr"
+APIDevMgrPath = f"{APICommandPath}/devmgr"
 
 
 class ControllerInfo(object):
     def __init__(self, about_info: SimpleNamespace) -> None:
 
-        if "up" in about_info["meta"]:
-            self.up = about_info["meta"]["up"]
-        elif "rc" in about_info["meta"]:
-            if about_info["meta"]["rc"] == 'ok':
-                self.up = True
-            else:
-                self.up = False
-        else:
+        if (
+            "up" not in about_info["meta"]
+            and "rc" in about_info["meta"]
+            and about_info["meta"]["rc"] == 'ok'
+        ):
+            self.up = True
+        elif (
+            "up" not in about_info["meta"]
+            and "rc" in about_info["meta"]
+            or "up" not in about_info["meta"]
+        ):
             self.up = False
-
+        else:
+            self.up = about_info["meta"]["up"]
         if "server_version" in about_info["meta"]:
             self.version = about_info["meta"]["server_version"]
         else:
             self.version = ""
 
-        if "uuid" in about_info["meta"]:
-            self.uuid = about_info["meta"]["uuid"]
-        else:
-            self.uuid = ""
-
-        self.fullName = "Unifi Controller {} uuid: {}".format(self.version, self.uuid)
+        self.uuid = about_info["meta"]["uuid"] if "uuid" in about_info["meta"] else ""
+        self.fullName = f"Unifi Controller {self.version} uuid: {self.uuid}"
 
 
 @dataclass
