@@ -41,7 +41,7 @@ class MergifyCheck(AgentCheck):
             self.service_check(
                 "can_connect",
                 AgentCheck.CRITICAL,
-                message="Request timeout: {}, {}".format(url, e),
+                message=f"Request timeout: {url}, {e}",
             )
             raise
 
@@ -61,7 +61,7 @@ class MergifyCheck(AgentCheck):
                 self.service_check(
                     "can_connect",
                     AgentCheck.CRITICAL,
-                    message="Request failed: {}, {}".format(url, e),
+                    message=f"Request failed: {url}, {e}",
                 )
                 raise
 
@@ -69,7 +69,7 @@ class MergifyCheck(AgentCheck):
             self.service_check(
                 "can_connect",
                 AgentCheck.CRITICAL,
-                message="JSON Parse failed: {}, {}".format(url, e),
+                message=f"JSON Parse failed: {url}, {e}",
             )
             raise
 
@@ -82,10 +82,10 @@ class MergifyCheck(AgentCheck):
             queue_url = f"{self.api_url}/v1/repos/{repository}/queues"
             response_json = self.get_request(queue_url)
 
-            values = {}
-            for queue in response_json["queues"]:
-                values[queue["branch"]["name"]] = len(queue["pull_requests"])
-
+            values = {
+                queue["branch"]["name"]: len(queue["pull_requests"])
+                for queue in response_json["queues"]
+            }
             for branch in branches:
                 queue_tags = self.tags.copy()
                 queue_tags.append(f"branch:{branch}")

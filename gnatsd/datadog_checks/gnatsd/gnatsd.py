@@ -12,7 +12,7 @@ class GnatsdConfig:
         self.instance = instance
         self.host = instance.get('host', '')
         self.port = int(instance.get('port', 8222))
-        self.url = '{}:{}'.format(self.host, self.port)
+        self.url = f'{self.host}:{self.port}'
         self.server_name = instance.get('server_name', '')
         self.tags = instance.get('tags', [])
 
@@ -68,8 +68,8 @@ class GnatsdCheckInvocation:
         self.instance = instance
         self.checker = checker
         self.config = GnatsdConfig(instance)
-        self.tags = self.config.tags + ['server_name:%s' % self.config.server_name]
-        self.service_check_tags = self.tags + ['url:%s' % self.config.host]
+        self.tags = self.config.tags + [f'server_name:{self.config.server_name}']
+        self.service_check_tags = self.tags + [f'url:{self.config.host}']
 
     def check(self):
         # Confirm monitor endpoint is available
@@ -88,14 +88,14 @@ class GnatsdCheckInvocation:
             else:
                 raise ValueError('Non 200 response from NATS monitor port')
         except Exception as e:
-            msg = "Unable to fetch NATS stats: %s" % str(e)
+            msg = f"Unable to fetch NATS stats: {str(e)}"
             self.checker.service_check(
                 self.SERVICE_CHECK_NAME, AgentCheck.CRITICAL, message=msg, tags=self.service_check_tags
             )
             raise e
 
     def _check_endpoint(self, endpoint, metrics):
-        data = self.checker.http.get('{}/{}'.format(self.config.url, endpoint)).json()
+        data = self.checker.http.get(f'{self.config.url}/{endpoint}').json()
         self._track_metrics(endpoint, metrics, data)
 
     def _track_metrics(self, namespace, metrics, data, tags=None):
@@ -103,7 +103,7 @@ class GnatsdCheckInvocation:
             tags = self._metric_tags(namespace, data)
 
         for mname, mtype in metrics.items():
-            path = '{}.{}'.format(namespace, mname)
+            path = f'{namespace}.{mname}'
 
             if isinstance(mtype, dict):
                 for instance in data.get(mname, []):
@@ -114,24 +114,27 @@ class GnatsdCheckInvocation:
                         title = str(instance.get('name') or 'unnamed')
 
                     self._track_metrics(
-                        '{}.{}'.format(path, title), mtype, instance, tags=self._metric_tags(path, instance)
+                        f'{path}.{title}',
+                        mtype,
+                        instance,
+                        tags=self._metric_tags(path, instance),
                     )
             else:
                 if mtype == 'count':
                     mid = str(data.get('cid') or data.get('rid') or '')
-                    metric = self._count_delta('{}.{}'.format(path, mid), data[mname])
+                    metric = self._count_delta(f'{path}.{mid}', data[mname])
                 else:
                     metric = data[mname]
 
                 # Send metric to Datadog
-                getattr(self.checker, mtype)('gnatsd.{}'.format(path), metric, tags=tags)
+                getattr(self.checker, mtype)(f'gnatsd.{path}', metric, tags=tags)
 
     def _metric_tags(self, endpoint, data):
         tags = self.tags[:]
         if endpoint in self.TAGS:
             for tag in self.TAGS[endpoint]:
                 if tag in data:
-                    tags.append('gnatsd-{}:{}'.format(tag, data[tag]))
+                    tags.append(f'gnatsd-{tag}:{data[tag]}')
         return tags
 
     def _count_delta(self, count_id, current_value):

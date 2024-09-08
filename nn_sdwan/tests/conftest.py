@@ -13,8 +13,7 @@ def dd_environment():
 
 @pytest.fixture(scope="session")
 def instance_empty():
-    instance = {}
-    return instance
+    return {}
 
 
 @pytest.fixture(scope="session")

@@ -68,7 +68,7 @@ class SnmpwalkCheck(NetworkCheck):
 
     def _check(self, instance):
         if not self.binary:
-            raise BinaryUnavailable("Cannot find executable: {}".format(self.expected_bin))
+            raise BinaryUnavailable(f"Cannot find executable: {self.expected_bin}")
 
         ip_address = self._get_instance_addr(instance)
         metrics = instance.get('metrics', [])
@@ -84,10 +84,18 @@ class SnmpwalkCheck(NetworkCheck):
         for metric in metrics:
             mib = metric['MIB']
             table = metric['table']
-            cmd = [self.binary, '-c{}'.format(community_string), '-v2c', '-t', str(timeout), '-r', str(retries)]
+            cmd = [
+                self.binary,
+                f'-c{community_string}',
+                '-v2c',
+                '-t',
+                str(timeout),
+                '-r',
+                str(retries),
+            ]
             if self.mib_dirs:
                 cmd.extend(['-M', self.mib_dirs])
-            cmd.extend([ip_address, '{}:{}'.format(mib, table)])
+            cmd.extend([ip_address, f'{mib}:{table}'])
 
             try:
                 output = get_subprocess_output(cmd, self.log)[0]
@@ -119,7 +127,7 @@ class SnmpwalkCheck(NetworkCheck):
                     self.log.warning('Problem parsing output of snmp walk: %s', line)
 
         # Get any base configured tags and add our primary tag
-        tags = instance.get('tags', []) + ['snmp_device:{}'.format(ip_address)]
+        tags = instance.get('tags', []) + [f'snmp_device:{ip_address}']
 
         # It seems kind of weird, but from what I can tell the snmp check allows
         # you to add symbols to a metric that were retrieved by another metric,
@@ -157,13 +165,13 @@ class SnmpwalkCheck(NetworkCheck):
                                 # It matches so we'll apply it, group(1) becomes
                                 # the value
                                 v = match.group(1)
-                                dynamic_tags[i].append('{}:{}'.format(tag, v))
+                                dynamic_tags[i].append(f'{tag}:{v}')
                                 additional_tags = metric_tag.get('additional_tags', [])
                                 # and we add any additional tags
                                 dynamic_tags[i].extend(additional_tags)
                         else:
                             # This is a standard tag, just use the value
-                            dynamic_tags[i].append('{}:{}'.format(tag, v))
+                            dynamic_tags[i].append(f'{tag}:{v}')
                 else:
                     self.log.debug('unsupported metric_tag: %s', metric_tag)
                     continue
@@ -177,7 +185,7 @@ class SnmpwalkCheck(NetworkCheck):
                         # skip empty
                         continue
                     # metric key
-                    key = '{}.{}'.format(SOURCE_TYPE_NAME, symbol)
+                    key = f'{SOURCE_TYPE_NAME}.{symbol}'
                     value = int(value)
 
                     typ = types[symbol]
@@ -186,7 +194,7 @@ class SnmpwalkCheck(NetworkCheck):
                     elif typ in self.GAUGE_TYPES:
                         self.gauge(key, value, tags + dynamic_tags[i], hostname=hostname)
                     else:
-                        raise Exception('unsupported metric symbol type: {}'.format(typ))
+                        raise Exception(f'unsupported metric symbol type: {typ}')
 
         return [(self.SC_NAME, Status.UP, None)]
 

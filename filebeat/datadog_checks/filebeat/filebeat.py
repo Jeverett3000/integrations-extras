@@ -173,7 +173,7 @@ class FilebeatCheckInstanceConfig:
 
         if not isinstance(self._only_metrics, list):
             raise Exception(
-                "If given, filebeat's only_metrics must be a list of regexes, got %s" % (self._only_metrics,)
+                f"If given, filebeat's only_metrics must be a list of regexes, got {self._only_metrics}"
             )
 
     @property
@@ -207,7 +207,9 @@ class FilebeatCheckInstanceConfig:
             try:
                 compiled_regexes.append(re.compile(regex))
             except sre_constants.error as ex:
-                raise Exception('Invalid only_metric regex for filebeat: "%s", error: %s' % (regex, ex))
+                raise Exception(
+                    f'Invalid only_metric regex for filebeat: "{regex}", error: {ex}'
+                )
 
         return compiled_regexes
 

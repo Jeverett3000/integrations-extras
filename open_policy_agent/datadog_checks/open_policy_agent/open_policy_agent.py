@@ -35,7 +35,7 @@ class OpenPolicyAgentCheck(OpenMetricsBaseCheck):
                 self.service_check(check_name, self.WARNING)
 
     def _get_policies(self, opa_url):
-        policies_url = opa_url + "/v1/policies"
+        policies_url = f"{opa_url}/v1/policies"
         try:
             response = self.http.get(policies_url)
             policies = response.json()
@@ -53,9 +53,9 @@ class OpenPolicyAgentCheck(OpenMetricsBaseCheck):
         if prometheus_url is None:
             raise ConfigurationError("Each instance must have a url to the prometheus endpoint")
 
-        health_url = opa_url + "/health"
-        plugins_url = health_url + "?plugins"
-        bundles_url = health_url + "?bundles"
+        health_url = f"{opa_url}/health"
+        plugins_url = f"{health_url}?plugins"
+        bundles_url = f"{health_url}?bundles"
 
         # General service health
         self._http_check(health_url, 'open_policy_agent.health')

@@ -14,7 +14,7 @@ def test_create_check_instance_transform(tidb_instance):
     assert check.instance.get('tags') == ['tidb_cluster_name:test', 'tidb_cluster_component:tidb']
     mapper = check.instance.get('labels_mapper')
     for label in GENERIC_TAGS:
-        assert mapper.get(label) == label + "_in_app"
+        assert mapper.get(label) == f"{label}_in_app"
 
 
 @pytest.mark.unit

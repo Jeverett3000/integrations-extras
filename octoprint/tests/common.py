@@ -1,6 +1,6 @@
 from datadog_checks.dev import get_docker_hostname
 
-URL = 'http://{}:8000'.format(get_docker_hostname())
+URL = f'http://{get_docker_hostname()}:8000'
 
 
 # fmt: off

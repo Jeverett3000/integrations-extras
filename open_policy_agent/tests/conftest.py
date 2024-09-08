@@ -4,8 +4,8 @@ import pytest
 
 from datadog_checks.dev import docker_run, get_docker_hostname, get_here
 
-URL = 'http://{}:8181'.format(get_docker_hostname())
-PROMETHEUS_URL = URL + "/metrics"
+URL = f'http://{get_docker_hostname()}:8181'
+PROMETHEUS_URL = f"{URL}/metrics"
 INSTANCE = {'opa_url': URL, 'prometheus_url': PROMETHEUS_URL}
 
 

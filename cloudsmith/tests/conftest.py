@@ -8,46 +8,69 @@ def dd_environment():
 
 @pytest.fixture()
 def instance_good():
-    instance = {'url': 'https://api.cloudsmith.io/v1', 'cloudsmith_api_key': 'aaa', 'organization': 'cloudsmith'}
-    return instance
+    return {
+        'url': 'https://api.cloudsmith.io/v1',
+        'cloudsmith_api_key': 'aaa',
+        'organization': 'cloudsmith',
+    }
 
 
 @pytest.fixture()
 def instance_empty():
-    instance = {}
-    return instance
+    return {}
 
 
 @pytest.fixture()
 def instance_url_none():
-    instance = {'url': None, 'cloudsmith_api_key': 'aaa', 'organization': 'cloudsmith'}
-    return instance
+    return {'url': None, 'cloudsmith_api_key': 'aaa', 'organization': 'cloudsmith'}
 
 
 @pytest.fixture()
 def instance_api_key_none():
-    instance = {'url': 'https://api.cloudsmith.io/v1', 'cloudsmith_api_key': None, 'organization': 'cloudsmith'}
-    return instance
+    return {
+        'url': 'https://api.cloudsmith.io/v1',
+        'cloudsmith_api_key': None,
+        'organization': 'cloudsmith',
+    }
 
 
 @pytest.fixture()
 def instance_org_none():
-    instance = {'url': 'https://api.cloudsmith.io/v1', 'cloudsmith_api_key': 'aaa', 'organization': None}
-    return instance
+    return {
+        'url': 'https://api.cloudsmith.io/v1',
+        'cloudsmith_api_key': 'aaa',
+        'organization': None,
+    }
 
 
 @pytest.fixture()
 def entitlements_test_json():
-    entitlements_json = {
+    return {
         'tokens': {
             'active': 19,
             'inactive': 100,
             'total': 119,
             'bandwidth': {
-                'lowest': {'value': 1460, 'units': 'bytes', 'display': '1.4 KB'},
-                'average': {'value': 1453939, 'units': 'bytes', 'display': '1.4 MB'},
-                'highest': {'value': 28062489, 'units': 'bytes', 'display': '26.8 MB'},
-                'total': {'value': 37802418, 'units': 'bytes', 'display': '36.1 MB'},
+                'lowest': {
+                    'value': 1460,
+                    'units': 'bytes',
+                    'display': '1.4 KB',
+                },
+                'average': {
+                    'value': 1453939,
+                    'units': 'bytes',
+                    'display': '1.4 MB',
+                },
+                'highest': {
+                    'value': 28062489,
+                    'units': 'bytes',
+                    'display': '26.8 MB',
+                },
+                'total': {
+                    'value': 37802418,
+                    'units': 'bytes',
+                    'display': '36.1 MB',
+                },
             },
             'downloads': {
                 'lowest': {'value': 1},
@@ -57,39 +80,60 @@ def entitlements_test_json():
             },
         }
     }
-    return entitlements_json
 
 
 @pytest.fixture()
 def entitlements_test_bad_json():
-    entitlements_test_bad_json = {
+    return {
         'tokens': {
             'active': 19,
             'inactive': 100,
             'bandwidth': {
-                'lowest': {'value': 1460, 'units': 'bytes', 'display': '1.4 KB'},
-                'average': {'value': 1453939, 'units': 'bytes', 'display': '1.4 MB'},
-                'highest': {'value': 28062489, 'units': 'bytes', 'display': '26.8 MB'},
+                'lowest': {
+                    'value': 1460,
+                    'units': 'bytes',
+                    'display': '1.4 KB',
+                },
+                'average': {
+                    'value': 1453939,
+                    'units': 'bytes',
+                    'display': '1.4 MB',
+                },
+                'highest': {
+                    'value': 28062489,
+                    'units': 'bytes',
+                    'display': '26.8 MB',
+                },
             },
-            'downloads': {'lowest': {'value': 1}, 'average': {'value': 9}, 'highest': {'value': 64}},
+            'downloads': {
+                'lowest': {'value': 1},
+                'average': {'value': 9},
+                'highest': {'value': 64},
+            },
         }
     }
-    return entitlements_test_bad_json
 
 
 @pytest.fixture()
 def not_found_json():
-    not_found_json = {"detail": "Not found."}
-    return not_found_json
+    return {"detail": "Not found."}
 
 
 @pytest.fixture()
 def usage_resp_bad_json():
-    usage_resp_bad_json = {
+    return {
         'usage': {
             'raw': {
-                'bandwidth': {'used': 57045, 'configured': 2199023255552, 'plan_limit': 64424509440},
-                'storage': {'used': 10054602731, 'configured': 1099511627776, 'plan_limit': 32212254720},
+                'bandwidth': {
+                    'used': 57045,
+                    'configured': 2199023255552,
+                    'plan_limit': 64424509440,
+                },
+                'storage': {
+                    'used': 10054602731,
+                    'configured': 1099511627776,
+                    'plan_limit': 32212254720,
+                },
             },
             'display': {
                 'bandwidth': {
@@ -98,16 +142,20 @@ def usage_resp_bad_json():
                     'plan_limit': '60 GB',
                     'percentage_used': '0.0%',
                 },
-                'storage': {'used': '9.4 GB', 'configured': '1 TB', 'plan_limit': '30 GB', 'percentage_used': '0.914%'},
+                'storage': {
+                    'used': '9.4 GB',
+                    'configured': '1 TB',
+                    'plan_limit': '30 GB',
+                    'percentage_used': '0.914%',
+                },
             },
         }
     }
-    return usage_resp_bad_json
 
 
 @pytest.fixture()
 def usage_resp_good():
-    usage_resp_good = {
+    return {
         'usage': {
             'raw': {
                 'bandwidth': {
@@ -130,16 +178,20 @@ def usage_resp_good():
                     'plan_limit': '60 GB',
                     'percentage_used': '0.0%',
                 },
-                'storage': {'used': '9.4 GB', 'configured': '1 TB', 'plan_limit': '30 GB', 'percentage_used': '0.914%'},
+                'storage': {
+                    'used': '9.4 GB',
+                    'configured': '1 TB',
+                    'plan_limit': '30 GB',
+                    'percentage_used': '0.914%',
+                },
             },
         }
     }
-    return usage_resp_good
 
 
 @pytest.fixture()
 def usage_resp_warning():
-    usage_resp_warning = {
+    return {
         'usage': {
             'raw': {
                 'bandwidth': {
@@ -162,16 +214,20 @@ def usage_resp_warning():
                     'plan_limit': '30 GB',
                     'percentage_used': '80.0%',
                 },
-                'storage': {'used': '24 GB', 'configured': '30 GB', 'plan_limit': '30 GB', 'percentage_used': '80%'},
+                'storage': {
+                    'used': '24 GB',
+                    'configured': '30 GB',
+                    'plan_limit': '30 GB',
+                    'percentage_used': '80%',
+                },
             },
         }
     }
-    return usage_resp_warning
 
 
 @pytest.fixture()
 def usage_resp_critical():
-    usage_resp_critical = {
+    return {
         'usage': {
             'raw': {
                 'bandwidth': {
@@ -194,16 +250,20 @@ def usage_resp_critical():
                     'plan_limit': '60 GB',
                     'percentage_used': '100.0%',
                 },
-                'storage': {'used': '30 GB', 'configured': '30 GB', 'plan_limit': '30 GB', 'percentage_used': '100%'},
+                'storage': {
+                    'used': '30 GB',
+                    'configured': '30 GB',
+                    'plan_limit': '30 GB',
+                    'percentage_used': '100%',
+                },
             },
         }
     }
-    return usage_resp_critical
 
 
 @pytest.fixture()
 def audit_log_resp_good():
-    audit_log_resp_good = [
+    return [
         {
             "actor": "test user",
             "actor_ip_address": "XXX.XXX.XXX.XXX",
@@ -231,13 +291,11 @@ def audit_log_resp_good():
             "target_slug_perm": "eqr0eeRYz0",
         }
     ]
-    return audit_log_resp_good
 
 
 @pytest.fixture()
 def audit_log_resp_bad_json():
-    # create a bad response
-    audit_log_resp_bad_json = [
+    return [
         {
             "actor_ip_address": "XXX.XXX.XXX.XXX",
             "actor_kind": "user",
@@ -261,12 +319,11 @@ def audit_log_resp_bad_json():
             "target_slug_perm": "eqr0eeRYz0",
         }
     ]
-    return audit_log_resp_bad_json
 
 
 @pytest.fixture()
 def vulnerabilitiy_resp_json():
-    vulnerabilitiy_resp_json = [
+    return [
         {
             "identifier": "weqwqeqw",
             "created_at": "2023-02-06T18:18:39.546636Z",
@@ -296,12 +353,11 @@ def vulnerabilitiy_resp_json():
             "max_severity": "Critical",
         },
     ]
-    return vulnerabilitiy_resp_json
 
 
 @pytest.fixture()
 def vulnerabilitiy_resp_json_bad():
-    vulnerabilitiy_resp_json_bad = [
+    return [
         {
             "identifier": "weqwqeqw",
             "created_at": "2023-01-06T18:18:39.546636Z",
@@ -316,4 +372,3 @@ def vulnerabilitiy_resp_json_bad():
             "max_severity": "Medium",
         }
     ]
-    return vulnerabilitiy_resp_json_bad

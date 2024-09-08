@@ -33,7 +33,7 @@ def convert_query_speed(in_key, in_val):
     ]
     out_dict = {}
     for ent in entry_key:
-        new_key = "stardog.%s.%s" % (in_key, ent)
+        new_key = f"stardog.{in_key}.{ent}"
         out_dict[new_key] = in_val[ent]
     return out_dict
 
@@ -54,7 +54,7 @@ def convert_query_counts(in_key, in_val):
     ]
     out_dict = {}
     for ent in entry_key:
-        new_key = "stardog.%s.%s" % (in_key, ent)
+        new_key = f"stardog.{in_key}.{ent}"
         out_dict[new_key] = in_val[ent]
     return out_dict
 
@@ -66,7 +66,7 @@ def convert_default(in_key, in_val):
         return convert_query_counts(in_key, in_val)
 
     try:
-        key = "stardog.%s" % in_key
+        key = f"stardog.{in_key}"
         val = float(in_val["value"] if "value" in in_val else in_val["count"])
         return {key: val}
     except Exception:
@@ -87,7 +87,7 @@ class StardogCheck(AgentCheck):
             if db_match is not None:
                 try:
                     db_name = db_match.group(2)
-                    local_tags.append("database:%s" % db_name)
+                    local_tags.append(f"database:{db_name}")
                 except Exception:
                     self.log.warning("No database name was found")
                     continue
@@ -122,5 +122,5 @@ class StardogCheck(AgentCheck):
         except KeyError:
             tags = []
 
-        tags.append("stardog_url:%s" % self.instance["stardog_url"])
+        tags.append(f'stardog_url:{self.instance["stardog_url"]}')
         self._process_doc(json_doc, tags)

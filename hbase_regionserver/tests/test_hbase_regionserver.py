@@ -57,8 +57,7 @@ class DummyReporter(threading.Thread):
             self.flush()
 
     def flush(self):
-        metrics = self.metrics_aggregator.flush()
-        if metrics:
+        if metrics := self.metrics_aggregator.flush():
             self.metrics = metrics
 
 
@@ -129,7 +128,7 @@ class TestHbase_regionserver(unittest.TestCase):
             # pause_time_metrics = [t for t in metrics if "hbase.regionserver.server.pause_time" in t['metric'] and "instance:hbase_regionserver-localhost-10102" in t['tags']]  # noqa: E501
             time.sleep(1)
             count += 1
-            if len(mutations_metrics) >= 2 and len(slow_appned_metrics) >= 1:
+            if len(mutations_metrics) >= 2 and slow_appned_metrics:
                 break
             elif count <= 60:
                 continue

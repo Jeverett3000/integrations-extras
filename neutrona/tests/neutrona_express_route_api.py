@@ -8,7 +8,7 @@ def expressroute_metrics():
 
     service_key = request.args.get('')
 
-    if not service_key == 'my_service_key':
+    if service_key != 'my_service_key':
         return 'error', 400
 
     return jsonify(

@@ -14,7 +14,7 @@ class PhpApcuCheck(AgentCheck):
         parsed_url = urlparse(url)
         server_host = parsed_url.hostname
         server_port = parsed_url.port or 80
-        service_check_tags = ['host:%s' % server_host, 'port:%s' % server_port] + tags
+        service_check_tags = [f'host:{server_host}', f'port:{server_port}'] + tags
 
         self.log.debug('apcu check url[%s]', url)
 

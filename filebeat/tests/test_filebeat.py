@@ -135,7 +135,7 @@ def test_ignore_registry(aggregator, instance):
     # test that it silently ignores the registry file
     # and does the http check
     check.check(instance)
-    tags = ["stats_endpoint:{}".format(instance['stats_endpoint'])]
+    tags = [f"stats_endpoint:{instance['stats_endpoint']}"]
     aggregator.assert_service_check("filebeat.can_connect", status=FilebeatCheck.OK, tags=tags)
 
 
@@ -147,7 +147,7 @@ def test_instance_tags(aggregator, instance):
     # test that it uses both the instance tags and the
     # `stats_endpoint` tag generated
     check.check(instance)
-    tags = instance['tags'] + ["stats_endpoint:{}".format(instance['stats_endpoint'])]
+    tags = instance['tags'] + [f"stats_endpoint:{instance['stats_endpoint']}"]
     aggregator.assert_service_check("filebeat.can_connect", status=FilebeatCheck.OK, tags=tags)
 
 
@@ -508,7 +508,7 @@ def test_check(aggregator, instance):
     check = FilebeatCheck("filebeat", {}, [instance])
     check.check(instance)
     check.check(instance)
-    tags = ["stats_endpoint:{}".format(instance['stats_endpoint'])]
+    tags = [f"stats_endpoint:{instance['stats_endpoint']}"]
     aggregator.assert_metric("filebeat.harvester.running", metric_type=aggregator.GAUGE, count=2, tags=tags)
     aggregator.assert_metric("libbeat.config.module.starts", metric_type=aggregator.COUNTER, count=1, tags=tags)
     aggregator.assert_service_check("filebeat.can_connect", status=FilebeatCheck.OK, tags=tags)

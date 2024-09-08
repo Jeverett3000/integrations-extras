@@ -37,13 +37,13 @@ class RedpandaCheck(OpenMetricsBaseCheckV2):
 
             if errors:
                 raise ConfigurationError(
-                    'Invalid metric_groups found in redpanda conf.yaml: {}'.format(', '.join(errors))
+                    f"Invalid metric_groups found in redpanda conf.yaml: {', '.join(errors)}"
                 )
 
         tags = self.instance.get('tags', [])
 
         # include hostname:port for server tag
-        tags.append('redpanda_server:{}'.format(urlparse(endpoint).netloc))
+        tags.append(f'redpanda_server:{urlparse(endpoint).netloc}')
 
         metrics = INSTANCE_DEFAULT_METRICS + additional_metrics
 

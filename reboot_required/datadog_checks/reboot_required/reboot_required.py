@@ -43,20 +43,19 @@ class RebootRequiredCheck(AgentCheck):
         if deltatime.days > critical_days:
             return (
                 AgentCheck.CRITICAL,
-                'Reboot is critical: security patches applied {} days ago'.format(deltatime.days),
+                f'Reboot is critical: security patches applied {deltatime.days} days ago',
             )
         elif deltatime.days > warning_days:
             return (
                 AgentCheck.WARNING,
-                'Reboot is necessary; security patches applied {} days ago'.format(deltatime.days),
+                f'Reboot is necessary; security patches applied {deltatime.days} days ago',
             )
         else:
             return AgentCheck.OK, None
 
     def _get_created_at(self, fname):
         file_stat = stat(fname)
-        created_at = file_stat[ST_MTIME]
-        return created_at
+        return file_stat[ST_MTIME]
 
     def _touch(self, fname, times=None):
         with open(fname, 'a'):

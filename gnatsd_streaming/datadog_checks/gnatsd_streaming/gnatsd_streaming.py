@@ -14,7 +14,7 @@ class GnatsdStreamingConfig:
         self.instance = instance
         self.host = instance.get('host', '')
         self.port = int(instance.get('port', 8222))
-        self.url = self.host + ':' + str(self.port) + '/streaming'
+        self.url = f'{self.host}:{self.port}/streaming'
         self.server_name = instance.get('server_name', '')
         self.pagination_limit = instance.get('pagination_limit', 1024)
         self.tags = instance.get('tags', [])
@@ -47,8 +47,8 @@ class GnatsdStreamingCheckInvocation:
         self.instance = instance
         self.checker = checker
         self.config = GnatsdStreamingConfig(instance)
-        self.tags = self.config.tags + ['server_name:%s' % self.config.server_name]
-        self.service_check_tags = self.tags + ['url:%s' % self.config.host]
+        self.tags = self.config.tags + [f'server_name:{self.config.server_name}']
+        self.service_check_tags = self.tags + [f'url:{self.config.host}']
 
     def check(self):
         # Confirm monitor endpoint is available
@@ -68,14 +68,14 @@ class GnatsdStreamingCheckInvocation:
             else:
                 raise ValueError('Non 200 response from NATS monitor port')
         except Exception as e:
-            msg = "Unable to fetch NATS Streaming stats: %s" % str(e)
+            msg = f"Unable to fetch NATS Streaming stats: {str(e)}"
             self.checker.service_check(
                 self.SERVICE_CHECK_NAME, AgentCheck.CRITICAL, message=msg, tags=self.service_check_tags
             )
             raise e
 
     def _failover_check(self):
-        response = self.checker.http.get(self.config.url + '/serverz').json()
+        response = self.checker.http.get(f'{self.config.url}/serverz').json()
         if self.checker.ft_status is None:
             # our first run through we just remember the state for later
             self.checker.ft_status = response['state']
@@ -85,11 +85,10 @@ class GnatsdStreamingCheckInvocation:
                     'timestamp': int(time.time()),
                     'source_type_name': 'gnatsd_streaming',
                     'msg_title': 'Nats Streaming Failover',
-                    'msg_text': 'NATS Streaming Server Changed Status from {} to {}'.format(
-                        self.checker.ft_status, response['state']
-                    ),
+                    'msg_text': f"NATS Streaming Server Changed Status from {self.checker.ft_status} to {response['state']}",
                     'host': self.config.host,
-                    'tags': self.config.tags + ['action:gnatsd_streaming_failover'],
+                    'tags': self.config.tags
+                    + ['action:gnatsd_streaming_failover'],
                 }
             )
 
@@ -100,7 +99,9 @@ class GnatsdStreamingCheckInvocation:
         if pagination:
             params.update(pagination)
 
-        data = self.checker.http.get(self.config.url + '/' + endpoint, params=params).json()
+        data = self.checker.http.get(
+            f'{self.config.url}/{endpoint}', params=params
+        ).json()
         self._track_metrics(endpoint, metrics, data)
 
         if data.get('count', 0) > 0:
@@ -112,13 +113,16 @@ class GnatsdStreamingCheckInvocation:
             tags = self._metric_tags(namespace, data)
 
         for mname, mtype in metrics.items():
-            path = namespace + '.' + mname
+            path = f'{namespace}.{mname}'
 
             if isinstance(mtype, dict):
                 for instance in data.get(mname, []):
                     title = str(instance.get('name')) if 'channels' in namespace else ''
                     self._track_metrics(
-                        path + '.' + title.replace(".", "_"), mtype, instance, tags=self._metric_tags(path, instance)
+                        f'{path}.' + title.replace(".", "_"),
+                        mtype,
+                        instance,
+                        tags=self._metric_tags(path, instance),
                     )
             else:
                 if mtype == 'count':
@@ -127,7 +131,7 @@ class GnatsdStreamingCheckInvocation:
                     metric = data[mname]
 
                 # Send metric to Datadog
-                getattr(self.checker, mtype)('gnatsd.streaming.' + path, metric, tags=tags)
+                getattr(self.checker, mtype)(f'gnatsd.streaming.{path}', metric, tags=tags)
 
     def _params(self, endpoint):
         return {'channelsz': {'subs': 1, 'limit': self.config.pagination_limit}}.get(endpoint, {})
@@ -135,9 +139,11 @@ class GnatsdStreamingCheckInvocation:
     def _metric_tags(self, endpoint, data):
         tags = []
         if endpoint in self.TAGS:
-            for tag in self.TAGS[endpoint]:
-                if tag in data:
-                    tags.append('nss-' + tag + ':' + str(data[tag]))
+            tags.extend(
+                f'nss-{tag}:{str(data[tag])}'
+                for tag in self.TAGS[endpoint]
+                if tag in data
+            )
         return self.tags + tags
 
     def _count_delta(self, count_id, current_value):

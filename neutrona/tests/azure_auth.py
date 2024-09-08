@@ -6,19 +6,19 @@ app = Flask(__name__)
 @app.route('/my_directory_id/oauth2/token', methods=['POST'])
 def auth_token():
 
-    if not request.args.get('api-version') == '1.0':
+    if request.args.get('api-version') != '1.0':
         return 'error', 400
 
-    if not request.form['grant_type'] == 'client_credentials':
+    if request.form['grant_type'] != 'client_credentials':
         return 'error', 400
 
-    if not request.form['resource'] == 'https://management.core.windows.net/':
+    if request.form['resource'] != 'https://management.core.windows.net/':
         return 'error', 400
 
-    if not request.form['client_id'] == 'my_application_id':
+    if request.form['client_id'] != 'my_application_id':
         return 'error', 400
 
-    if not request.form['client_secret'] == 'my_application_key':
+    if request.form['client_secret'] != 'my_application_key':
         return 'error', 400
 
     return jsonify(

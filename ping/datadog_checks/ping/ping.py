@@ -75,23 +75,22 @@ class PingCheck(AgentCheck):
         )
         self.log.debug("ping returned %s - %s - %s", retcode, lines, err)
         if retcode != 0:
-            raise CheckException("ping returned {}: {}".format(retcode, err))
+            raise CheckException(f"ping returned {retcode}: {err}")
 
         return lines
 
     def check(self, instance):
         host, custom_tags, timeout, response_time = self._load_conf(instance)
 
-        custom_tags.append("target_host:{}".format(host))
+        custom_tags.append(f"target_host:{host}")
 
         try:
             lines = self._exec_ping(timeout, host)
             regex = re.compile(r"time[<=]((\d|\.)*)")
-            result = regex.findall(lines)
-            if result:
+            if result := regex.findall(lines):
                 length = result[0][0]
             else:
-                raise CheckException("No time= found ({})".format(lines))
+                raise CheckException(f"No time= found ({lines})")
 
         except CheckException as e:
             self.log.info("%s is DOWN (%s)", host, e)

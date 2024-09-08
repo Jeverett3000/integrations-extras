@@ -19,7 +19,7 @@ class TraefikCheck(AgentCheck):
             raise ConfigurationError('Configuration error, you must define `host`')
 
         try:
-            url = '{}://{}:{}{}'.format(scheme, host, port, path)
+            url = f'{scheme}://{host}:{port}{path}'
             response = self.http.get(url)
             response_status_code = response.status_code
 
@@ -32,7 +32,11 @@ class TraefikCheck(AgentCheck):
                     status_code_counts = payload['total_status_code_count']
 
                     for status_code, count in iteritems(status_code_counts):
-                        self.gauge('traefik.total_status_code_count', count, ['status_code:{}'.format(status_code)])
+                        self.gauge(
+                            'traefik.total_status_code_count',
+                            count,
+                            [f'status_code:{status_code}'],
+                        )
 
                 else:
                     self.log.debug('Field total_status_code_count not found in response.')
@@ -56,4 +60,6 @@ class TraefikCheck(AgentCheck):
             self.service_check('traefik.health', self.CRITICAL, message='Traefik endpoint unreachable')
 
         except Exception as e:
-            self.service_check('traefik.health', self.UNKNOWN, message='UNKNOWN exception: {}'.format(e))
+            self.service_check(
+                'traefik.health', self.UNKNOWN, message=f'UNKNOWN exception: {e}'
+            )

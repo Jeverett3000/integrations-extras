@@ -34,7 +34,7 @@ def dd_environment():
         # Let the cluster settle first
         sleep(10)
         # Bootstrap the cluster
-        url = 'https://{}:9443/v1/bootstrap/create_cluster'.format(get_docker_hostname())
+        url = f'https://{get_docker_hostname()}:9443/v1/bootstrap/create_cluster'
         r = requests.post(url, json=BOOTSTRAP, verify=False)
         if r.status_code != 200:
             print("Error: Unable to bootstrap")
@@ -44,8 +44,11 @@ def dd_environment():
             counter += 1
             try:
                 j = requests.get(
-                    'https://{}:9443/v1/cluster'.format("localhost"),
-                    auth=(BOOTSTRAP['credentials']['username'], BOOTSTRAP['credentials']['password']),
+                    'https://localhost:9443/v1/cluster',
+                    auth=(
+                        BOOTSTRAP['credentials']['username'],
+                        BOOTSTRAP['credentials']['password'],
+                    ),
                     headers={'Content-Type': 'application/json'},
                     timeout=10,
                     verify=False,
@@ -58,21 +61,24 @@ def dd_environment():
                     print("Retrying cluster bootstrap:", counter)
                     sleep(5)
             except Exception as e:
-                print("Retrying cluster bootstrap:", counter, " Error:", str(e))
+                print("Retrying cluster bootstrap:", counter, " Error:", e)
                 sleep(5)
             if counter > 9:
                 break
         # Create a database
         x = requests.post(
-            'https://{}:9443/v1/bdbs'.format("localhost"),
-            auth=(BOOTSTRAP['credentials']['username'], BOOTSTRAP['credentials']['password']),
+            'https://localhost:9443/v1/bdbs',
+            auth=(
+                BOOTSTRAP['credentials']['username'],
+                BOOTSTRAP['credentials']['password'],
+            ),
             headers={'Content-Type': 'application/json'},
             timeout=10,
             verify=False,
             json=DATABASE,
         )
         if x.status_code != 200:
-            print("Error: Unable to create database: HTTP {} : {}".format(x.status_code, x.text))
+            print(f"Error: Unable to create database: HTTP {x.status_code} : {x.text}")
         print("OK: DB Setup complete")
         yield
 

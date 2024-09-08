@@ -33,7 +33,7 @@ def test_no_services_object_in_json_yields_metrics_health_warning(aggregator):
         check.METRICS_SERVICE_CHECK,
         VespaCheck.WARNING,
         count=1,
-        message="No services in response from metrics proxy on " + check.URL + "?consumer=default",
+        message=f"No services in response from metrics proxy on {check.URL}?consumer=default",
     )
 
 

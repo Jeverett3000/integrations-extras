@@ -42,7 +42,7 @@ class ZabbixCheck(AgentCheck):
         token = response.get('result')
         if token is None:
             raise Exception(
-                'Unable to login with params user={} api={}: {}'.format(zabbix_user, zabbix_api, response.get('error'))
+                f"Unable to login with params user={zabbix_user} api={zabbix_api}: {response.get('error')}"
             )
         return token
 
@@ -127,9 +127,7 @@ class ZabbixCheck(AgentCheck):
         )
 
         response = self.request(zabbix_api, req_data)
-        result = response.get('result')
-
-        return result
+        return response.get('result')
 
     def check(self, instance):
         zabbix_user = instance.get('zabbix_user')
@@ -182,12 +180,12 @@ class ZabbixCheck(AgentCheck):
 
                 # To avoid sending non-numeric values as gauge
                 # https://www.zabbix.com/documentation/6.2/en/manual/api/reference/item/object?hl=value_typ#:~:text=ID%7D%2C%20%7BITEM.KEY%7D.-,value_type,-(required) # noqa: E501
-                if value_type != '0' and value_type != '3':
+                if value_type not in ['0', '3']:
                     self.log.debug('\"%s\" value is not numeric_float and numeric unsigned', item_name)
                     continue
 
                 try:
-                    dd_metricname = 'zabbix.' + mname
+                    dd_metricname = f'zabbix.{mname}'
                     dd_metricvalue = history[0]['value']
                     dd_hostname = hostdic[hostid].replace(' ', '_')
                 except Exception as e:

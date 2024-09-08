@@ -47,12 +47,12 @@ def test_check(mock_cmd, aggregator, instance):
     tags = sorted(
         [
             "foo:bar",
-            "isp:{}".format(MOCK_RESPONSE["isp"]),
-            "interface_name:{}".format(MOCK_RESPONSE["interface"]["name"]),
-            "server_id:{}".format(MOCK_RESPONSE["server"]["id"]),
-            "server_name:{}".format(MOCK_RESPONSE["server"]["name"]),
-            "server_country:{}".format(MOCK_RESPONSE["server"]["country"]),
-            "server_host:{}".format(MOCK_RESPONSE["server"]["host"]),
+            f'isp:{MOCK_RESPONSE["isp"]}',
+            f'interface_name:{MOCK_RESPONSE["interface"]["name"]}',
+            f'server_id:{MOCK_RESPONSE["server"]["id"]}',
+            f'server_name:{MOCK_RESPONSE["server"]["name"]}',
+            f'server_country:{MOCK_RESPONSE["server"]["country"]}',
+            f'server_host:{MOCK_RESPONSE["server"]["host"]}',
         ]
     )
 

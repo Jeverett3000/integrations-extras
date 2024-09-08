@@ -374,12 +374,12 @@ class UpboundUxpCheck(AgentCheck):
                 tags.append(new_kv)
                 v = re.sub(', .*$', '', v)
             if k == "host":
-                tags.append("uxp_host:" + v)
+                tags.append(f"uxp_host:{v}")
             elif k == "version":
-                tags.append("uxp_version:" + v)
+                tags.append(f"uxp_version:{v}")
             else:
-                tags.append(k + ":" + v)
-        tags.append("pod:" + pod_name)
+                tags.append(f"{k}:{v}")
+        tags.append(f"pod:{pod_name}")
 
         return tags
 
@@ -407,7 +407,7 @@ class UpboundUxpCheck(AgentCheck):
         if self.metrics_ignore_pod_annotations:
             return self.metrics_set
 
-        key_match_start = 'ad.datadoghq.com/uxp.' + pod_name
+        key_match_start = f'ad.datadoghq.com/uxp.{pod_name}'
         m = []
         if annotations is not None:
             for key in annotations:
@@ -430,12 +430,7 @@ class UpboundUxpCheck(AgentCheck):
                             continue
 
         # When there are no pod annotations, use the default metrics set
-        if len(m) == 0:
-            return self.metrics_set
-
-        # Pod annotation supersede defaults unless explicitly ignored
-        # through DataDog conf.yaml metrics_ignore_pod_annotations
-        return m
+        return self.metrics_set if not m else m
 
     def check(self, instance):
         if self.verbose:
@@ -446,7 +441,9 @@ class UpboundUxpCheck(AgentCheck):
         if self.uxp_hosts:
             for host in self.uxp_hosts:
                 try:
-                    response = requests.get('http://' + host + ':' + self.uxp_port + self.uxp_url, timeout=200)
+                    response = requests.get(
+                        f'http://{host}:{self.uxp_port}{self.uxp_url}', timeout=200
+                    )
                     metrics = response.text
                 except Exception as e:
                     # We were unable to get metrics for this host.
@@ -465,12 +462,20 @@ class UpboundUxpCheck(AgentCheck):
 
                 self.get_metrics(metrics, host)
 
-            self.count('datadog_agent_checks', self.check_count, ['agent_integration_version=' + __version__])
+            self.count(
+                'datadog_agent_checks',
+                self.check_count,
+                [f'agent_integration_version={__version__}'],
+            )
             self.check_count = self.check_count + 1
             self.service_check(self.SERVICE_CHECK_CONNECT_NAME, self.OK)
             return
 
-        self.count('datadog_agent_checks', self.check_count, ['agent_integration_version=' + __version__])
+        self.count(
+            'datadog_agent_checks',
+            self.check_count,
+            [f'agent_integration_version={__version__}'],
+        )
         self.check_count = self.check_count + 1
 
         # Get Pods in upbound-system or another namespace
@@ -479,7 +484,7 @@ class UpboundUxpCheck(AgentCheck):
         try:
             if 'KUBERNETES_SERVICE_HOST' not in os.environ and 'KUBERNETES_SERVICE_PORT' not in os.environ:
                 incluster = False
-                config.load_kube_config(self.home + "/uxp.kubeconfig")
+                config.load_kube_config(f"{self.home}/uxp.kubeconfig")
             else:
                 config.load_incluster_config()
         except Exception as e:
@@ -490,8 +495,6 @@ class UpboundUxpCheck(AgentCheck):
                 self.SERVICE_CHECK_CONNECT_NAME, self.CRITICAL, message="Error {0}".format(e), tags=None, hostname=None
             )
             raise
-            return
-
         self.service_check(self.SERVICE_CHECK_CONNECT_NAME, self.OK, message=None, tags=None, hostname=None)
 
         v1 = client.CoreV1Api()
@@ -501,16 +504,6 @@ class UpboundUxpCheck(AgentCheck):
             pods = v1.list_namespaced_pod(self.namespace)
         except Exception as e:
             raise
-
-            # There can be an exception if the agent is not
-            # allowed to list the pods. Verify that the
-            # apiserver-cluster-role, and a role binding
-            # for the agent service have been configured.
-
-            self.log.error("\nUnable to list pods. Please check the apiserver cluster role configuration.\n")
-            self.log.exception(e)
-            sys.stdout.flush()
-            return
 
         port_forward_target = 8080
         for pod in pods.items:
@@ -527,21 +520,25 @@ class UpboundUxpCheck(AgentCheck):
             try:
                 if not incluster:
                     port_forward_target_str = str(port_forward_target)
-                    cmd1 = 'kubectl --kubeconfig ' + self.home + '/uxp.kubeconfig '
-                    cmd2 = '-n ' + self.namespace + ' port-forward '
-                    cmd3 = 'pods/' + pod.metadata.name + ' '
-                    cmd4 = port_forward_target_str + ':' + self.uxp_port
+                    cmd1 = f'kubectl --kubeconfig {self.home}/uxp.kubeconfig '
+                    cmd2 = f'-n {self.namespace} port-forward '
+                    cmd3 = f'pods/{pod.metadata.name} '
+                    cmd4 = f'{port_forward_target_str}:{self.uxp_port}'
                     cmd = cmd1 + cmd2 + cmd3 + cmd4
                     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, text=True)
                     port_forward_info = p.stdout.readline()
                     if self.verbose:
                         self.log.debug(port_forward_info)
-                    response = requests.get('http://localhost:' + port_forward_target_str + self.uxp_url, timeout=200)
+                    response = requests.get(
+                        f'http://localhost:{port_forward_target_str}{self.uxp_url}',
+                        timeout=200,
+                    )
                     metrics = response.text
                     p.terminate()
                 else:
                     response = requests.get(
-                        'http://' + pod.status.pod_ip + ':' + self.uxp_port + self.uxp_url, timeout=200
+                        f'http://{pod.status.pod_ip}:{self.uxp_port}{self.uxp_url}',
+                        timeout=200,
                     )
                     metrics = response.text
             except Exception as e:
@@ -568,7 +565,7 @@ class UpboundUxpCheck(AgentCheck):
         metrics_prefix = ''
         if self.metrics_prefix is not None:
             if len(self.metrics_prefix) > 0:
-                metrics_prefix = self.metrics_prefix + '.'
+                metrics_prefix = f'{self.metrics_prefix}.'
         if self.verbose:
             self.log.debug("Observing metrics set")
             self.log.debug(self.metrics_set)
@@ -620,8 +617,11 @@ class UpboundUxpCheck(AgentCheck):
                             self.count(name, value, tags=tags)
                         except Exception as e:
                             self.log.exception(e)
-                    # histogram: _bucket
-                    elif metric_type == 'histogram':
+                    elif (
+                        metric_type == 'histogram'
+                        or metric_type != 'summary'
+                        and metric_type == 'gauge'
+                    ):
                         if self.verbose:
                             self.log.debug("%s: Name: %s, Tags: %s, Value: %s", metric_type, name, tags, str(value))
                         try:
@@ -629,20 +629,11 @@ class UpboundUxpCheck(AgentCheck):
                             self.gauge(name, value, tags=tags)
                         except Exception as e:
                             self.log.exception(e)
-                    # summary: _sum
                     elif metric_type == 'summary':
                         if self.verbose:
                             self.log.debug("%s: Name: %s, Labels: %s, Value: %s", metric_type, name, tags, str(value))
                         try:
                             self.count(name, value, tags=tags)
-                        except Exception as e:
-                            self.log.exception(e)
-                    # gauge: no _bucket, _sum, _total postfix
-                    elif metric_type == 'gauge':
-                        if self.verbose:
-                            self.log.debug("%s: Name: %s, Tags: %s, Value: %s", metric_type, name, tags, str(value))
-                        try:
-                            self.gauge(name, value, tags=tags)
                         except Exception as e:
                             self.log.exception(e)
                     else:

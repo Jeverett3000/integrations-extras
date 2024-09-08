@@ -21,7 +21,7 @@ VULNERABILITY_LAST_RUN = 0
 
 
 def audit_log_resp_good():
-    audit_log_resp_good = [
+    return [
         {
             "actor": "test user",
             "actor_ip_address": "XXX.XXX.XXX.XXX",
@@ -49,11 +49,10 @@ def audit_log_resp_good():
             "target_slug_perm": "eqr0eeRYz0",
         }
     ]
-    return audit_log_resp_good
 
 
 def vulnerabilitiy_resp_json():
-    vulnerabilitiy_resp_json = [
+    return [
         {
             "identifier": "weqwqeqw",
             "created_at": "2023-02-06T18:18:39.546636Z",
@@ -69,7 +68,6 @@ def vulnerabilitiy_resp_json():
             "max_severity": "Critical",
         }
     ]
-    return vulnerabilitiy_resp_json
 
 
 class CloudsmithCheck(AgentCheck):
@@ -87,8 +85,8 @@ class CloudsmithCheck(AgentCheck):
         self.log.debug("Cloudsmith monitoring starting on %s", self.base_url)
 
         self.tags = self.instance.get("tags", [])
-        self.tags.append("base_url:{}".format(self.base_url))
-        self.tags.append("cloudsmith_org:{}".format(self.org))
+        self.tags.append(f"base_url:{self.base_url}")
+        self.tags.append(f"cloudsmith_org:{self.org}")
 
     def validate_config(self):
         if not self.api_key:
@@ -101,8 +99,7 @@ class CloudsmithCheck(AgentCheck):
             raise ConfigurationError("Configuration error, please specify Cloudsmith url in conf.yaml")
 
     def get_full_path(self, path):
-        url = self.base_url.rstrip("/") + path + self.org
-        return url
+        return self.base_url.rstrip("/") + path + self.org
 
     def convert_time(self, time):
         return int(datetime.strptime(time, "%Y-%m-%dT%H:%M:%S.%fZ").timestamp())
@@ -115,7 +112,7 @@ class CloudsmithCheck(AgentCheck):
             headers = {"X-Api-Key": key, "content-type": "application/json"}
             response = self.http.get(url, headers=headers)
         except Timeout as e:
-            error_message = "Request timeout: {}, {}".format(url, e)
+            error_message = f"Request timeout: {url}, {e}"
             self.log.warning(error_message)
             self.service_check(
                 "can_connect",
@@ -125,7 +122,7 @@ class CloudsmithCheck(AgentCheck):
             raise
 
         except (HTTPError, InvalidURL, ConnectionError) as e:
-            error_message = "Request failed: {}, {}".format(url, e)
+            error_message = f"Request failed: {url}, {e}"
             self.log.warning(error_message)
             self.service_check(
                 "can_connect",
@@ -135,7 +132,7 @@ class CloudsmithCheck(AgentCheck):
             raise
 
         except JSONDecodeError as e:
-            error_message = "JSON Parse failed: {}, {}".format(url, e)
+            error_message = f"JSON Parse failed: {url}, {e}"
             self.log.warning(error_message)
             self.service_check(
                 "can_connect",
@@ -167,13 +164,11 @@ class CloudsmithCheck(AgentCheck):
 
     def get_usage_info(self):
         url = self.get_full_path(QUOTA)
-        response_json = self.get_api_json(url)
-        return response_json
+        return self.get_api_json(url)
 
     def get_entitlement_info(self):
         url = self.get_full_path(METRIC)
-        response_json = self.get_api_json(url)
-        return response_json
+        return self.get_api_json(url)
 
     def get_audit_log_info(self):
         url = self.get_full_path(AUDIT_LOG)
@@ -220,12 +215,11 @@ class CloudsmithCheck(AgentCheck):
         else:
             self.log.warning("Error when parsing JSON for tokens")
 
-        entitlement_info = {
+        return {
             "token_count": token_count,
             "token_bandwidth_total": bandwidth_total,
             "token_download_total": download_total,
         }
-        return entitlement_info
 
     def get_parsed_usage_info(self):
         response_json = self.get_usage_info()
@@ -267,13 +261,12 @@ class CloudsmithCheck(AgentCheck):
             elif bandwidth_used >= WARNING_QUOTA:
                 bandwidth_mark = self.WARNING
 
-        usage_info = {
+        return {
             "storage_mark": storage_mark,
             "storage_used": storage_used,
             "bandwidth_mark": bandwidth_mark,
             "bandwidth_used": bandwidth_used,
         }
-        return usage_info
 
     def get_parsed_audit_log_info(self):
         response_json = self.get_audit_log_info()
@@ -283,19 +276,18 @@ class CloudsmithCheck(AgentCheck):
         if len(response_json) == 0:
             self.log.warning("Error when parsing JSON for audit log information")
         else:
-            for i in response_json:
-                new_dict.append(
-                    {
-                        "actor": i["actor"],
-                        "actor_kind": i["actor_kind"],
-                        "city": i["actor_location"]["city"],
-                        "event": i["event"],
-                        "event_at": self.convert_time(i["event_at"]),
-                        "object": i["object"],
-                        "object_slug_perm": i["object_slug_perm"],
-                    }
-                )
-
+            new_dict.extend(
+                {
+                    "actor": i["actor"],
+                    "actor_kind": i["actor_kind"],
+                    "city": i["actor_location"]["city"],
+                    "event": i["event"],
+                    "event_at": self.convert_time(i["event_at"]),
+                    "object": i["object"],
+                    "object_slug_perm": i["object_slug_perm"],
+                }
+                for i in response_json
+            )
         return new_dict
 
     def filter_vulnerabilities(self, response_json, severity_list):
@@ -314,18 +306,17 @@ class CloudsmithCheck(AgentCheck):
         if len(response_json) == 0:
             self.log.warning("Error when parsing JSON for vulnerabilities information")
         else:
-            for i in response_json:
-                new_dict.append(
-                    {
-                        "package_name": i["package"]["name"],
-                        "package_version": i["package"]["version"],
-                        "package_url": i["package"]["url"],
-                        "severity": i["max_severity"],
-                        "num_vulnerabilities": i["num_vulnerabilities"],
-                        "created_at": self.convert_time(i["created_at"]),
-                    }
-                )
-
+            new_dict.extend(
+                {
+                    "package_name": i["package"]["name"],
+                    "package_version": i["package"]["version"],
+                    "package_url": i["package"]["url"],
+                    "severity": i["max_severity"],
+                    "num_vulnerabilities": i["num_vulnerabilities"],
+                    "created_at": self.convert_time(i["created_at"]),
+                }
+                for i in response_json
+            )
         return new_dict
 
     def check(self, _):
@@ -418,10 +409,8 @@ class CloudsmithCheck(AgentCheck):
                             "timestamp": a["event_at"],
                             "event_type": "audit logs",
                             "api_key": self.api_key,
-                            "msg_title": "{} on Object: {} (Object Slug: {}".format(
-                                a["event"], a["object"], a["object_slug_perm"]
-                            ),
-                            "msg_text": "Actor: {} ({}) from {}".format(a["actor"], a["actor_kind"], a["city"]),
+                            "msg_title": f'{a["event"]} on Object: {a["object"]} (Object Slug: {a["object_slug_perm"]}',
+                            "msg_text": f'Actor: {a["actor"]} ({a["actor_kind"]}) from {a["city"]}',
                             "aggregation_key": "audit_log",
                             "tags": self.tags,
                         }
@@ -436,26 +425,22 @@ class CloudsmithCheck(AgentCheck):
                             "timestamp": v["created_at"],
                             "event_type": "vulnerabilities",
                             "api_key": self.api_key,
-                            "msg_title": "{} vulnerability found in package: {} Version: {}".format(
-                                v["severity"], v["package_name"], v["package_version"]
-                            ),
-                            "msg_text": "Number of vulnerabilities: {}. Package URL: {}".format(
-                                v["num_vulnerabilities"], v["package_url"]
-                            ),
+                            "msg_title": f'{v["severity"]} vulnerability found in package: {v["package_name"]} Version: {v["package_version"]}',
+                            "msg_text": f'Number of vulnerabilities: {v["num_vulnerabilities"]}. Package URL: {v["package_url"]}',
                             "aggregation_key": "vulnerabilities",
                             "tags": self.tags,
                         }
                     )
             LAST_VULNERABILITY_STAMP = vulnerabilities_info[0]["created_at"]
 
-        storage_msg = "Percentage storage used: {}%".format(usage_info["storage_used"])
+        storage_msg = f'Percentage storage used: {usage_info["storage_used"]}%'
         self.service_check(
             "storage",
             usage_info["storage_mark"],
             message=storage_msg if usage_info["storage_mark"] != AgentCheck.OK else "",
         )
 
-        bandwith_msg = "Percentage bandwidth used: {}%".format(usage_info["bandwidth_used"])
+        bandwith_msg = f'Percentage bandwidth used: {usage_info["bandwidth_used"]}%'
         self.service_check(
             "bandwidth",
             usage_info["bandwidth_mark"],

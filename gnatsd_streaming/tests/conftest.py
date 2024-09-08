@@ -22,4 +22,4 @@ def dd_environment():
 
 @pytest.fixture
 def instance():
-    return {'host': 'http://{}'.format(HOST), 'port': 8222, 'pagination_limit': 1}
+    return {'host': f'http://{HOST}', 'port': 8222, 'pagination_limit': 1}

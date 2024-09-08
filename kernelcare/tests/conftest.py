@@ -17,7 +17,7 @@ def dd_environment():
     API_TOKEN = 'ApiToken'
     API_TOKEN_NOT_FOUND = 'ApiToken-NotFound'
 
-    URL = 'http://{}:8000/'.format(get_docker_hostname())
+    URL = f'http://{get_docker_hostname()}:8000/'
 
     endpoints = [
         URL + KEY,

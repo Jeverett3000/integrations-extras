@@ -34,7 +34,7 @@ class RedisSentinelCheck(AgentCheck):
         redis_conn = redis.StrictRedis(host=host, port=port, password=password, db=0)
 
         for master_name in instance['masters']:
-            base_tags = ['redis_name:%s' % master_name] + instance.get('tags', [])
+            base_tags = [f'redis_name:{master_name}'] + instance.get('tags', [])
             try:
                 self._process_instance_master(redis_conn, master_name, base_tags)
             except Exception as e:
@@ -76,7 +76,7 @@ class RedisSentinelCheck(AgentCheck):
         # so increment once for current sentinel
         self.increment('redis.sentinel.ok_sentinels', tags=master_tags)
         for stats in sentinels_stats:
-            sentinel_tags = ['sentinel_ip:%s' % stats['ip']] + base_tags
+            sentinel_tags = [f"sentinel_ip:{stats['ip']}"] + base_tags
             if stats['is_odown'] or stats['is_sdown']:  # sentinel keeps track of old sentinels
                 continue
             self.increment('redis.sentinel.ok_sentinels', tags=master_tags)
@@ -139,7 +139,7 @@ class RedisSentinelCheck(AgentCheck):
                 continue
 
             self.increment('redis.sentinel.ok_slaves', tags=master_tags)
-            slave_tags = ['slave_ip:%s' % stats['ip']] + base_tags
+            slave_tags = [f"slave_ip:{stats['ip']}"] + base_tags
 
             pending = stats.get('link-pending-commands', stats.get('pending-commands'))
             if pending is not None:
@@ -191,7 +191,7 @@ class RedisSentinelCheck(AgentCheck):
         }
         """
         stats = redis_conn.sentinel_master(master_name)
-        master_tags = ['master_ip:%s' % stats['ip']] + base_tags
+        master_tags = [f"master_ip:{stats['ip']}"] + base_tags
 
         pending = stats.get('link-pending-commands', stats.get('pending-commands'))
         if pending is not None:
@@ -224,8 +224,7 @@ class RedisSentinelCheck(AgentCheck):
                     {
                         'timestamp': int(time.time()),
                         'event_type': EVENT_TYPE,
-                        'msg_title': '%s failover from %s to %s'
-                        % (master_name, self._masters[master_name], stats['ip']),
+                        'msg_title': f"{master_name} failover from {self._masters[master_name]} to {stats['ip']}",
                         'alert_type': 'info',
                         "source_type_name": SOURCE_TYPE_NAME,
                         "event_object": master_name,

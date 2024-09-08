@@ -17,4 +17,4 @@ def dd_environment():
 
 @pytest.fixture
 def instance():
-    return {'host': 'http://{}'.format(HOST), 'port': 8222}
+    return {'host': f'http://{HOST}', 'port': 8222}

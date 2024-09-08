@@ -69,29 +69,37 @@ class RiakReplCheck(AgentCheck):
         try:
             r = self.http.get(url)
         except Timeout:
-            raise CheckException('URL: {} timed out after {} seconds.'.format(url, self.http.options['timeout']))
+            raise CheckException(
+                f"URL: {url} timed out after {self.http.options['timeout']} seconds."
+            )
         except ConnectionError as e:
             raise CheckException(e)
 
         if r.status_code != 200:
-            raise CheckException('Invalid Status Code, {} returned a status of {}.'.format(url, r.status_code))
+            raise CheckException(
+                f'Invalid Status Code, {url} returned a status of {r.status_code}.'
+            )
 
         try:
             stats = json.loads(r.text)
         except ValueError:
-            raise CheckException('{} returned an unserializable payload'.format(url))
+            raise CheckException(f'{url} returned an unserializable payload')
 
         cluster = stats['cluster_name']
 
         for key, val in iteritems(stats):
             if key in self.REPL_STATS:
-                self.safe_submit_metric("riak_repl." + key, val, tags=tags + ['cluster:%s' % cluster])
+                self.safe_submit_metric(
+                    f"riak_repl.{key}", val, tags=tags + [f'cluster:{cluster}']
+                )
 
         if stats['realtime_started'] is not None:
             for key, val in iteritems(stats['realtime_queue_stats']):
                 if key in self.REALTIME_QUEUE_STATS:
                     self.safe_submit_metric(
-                        "riak_repl.realtime_queue_stats." + key, val, tags=tags + ['cluster:%s' % cluster]
+                        f"riak_repl.realtime_queue_stats.{key}",
+                        val,
+                        tags=tags + [f'cluster:{cluster}'],
                     )
 
         for c in connected_clusters:
@@ -101,7 +109,9 @@ class RiakReplCheck(AgentCheck):
                     for key, val in iteritems(stats['fullsync_coordinator'][c]):
                         if key in self.FULLSYNC_COORDINATOR:
                             self.safe_submit_metric(
-                                "riak_repl.fullsync_coordinator." + key, val, tags=tags + ['cluster:%s' % c]
+                                f"riak_repl.fullsync_coordinator.{key}",
+                                val,
+                                tags=tags + [f'cluster:{c}'],
                             )
 
             if stats['realtime_started'] is not None:
@@ -109,14 +119,18 @@ class RiakReplCheck(AgentCheck):
                     for key, val in iteritems(stats['sources']['source_stats']['rt_source_connected_to']):
                         if key in self.REALTIME_SOURCE_CONN:
                             self.safe_submit_metric(
-                                "riak_repl.realtime_source.connected." + key, val, tags=tags + ['cluster:%s' % c]
+                                f"riak_repl.realtime_source.connected.{key}",
+                                val,
+                                tags=tags + [f'cluster:{c}'],
                             )
 
                 if self.exists(stats['realtime_queue_stats'], ['consumers', c]):
                     for key, val in iteritems(stats['realtime_queue_stats']['consumers'][c]):
                         if key in self.REALTIME_QUEUE_STATS_CONSUMERS:
                             self.safe_submit_metric(
-                                "riak_repl.realtime_queue_stats.consumers." + key, val, tags=tags + ['cluster:%s' % c]
+                                f"riak_repl.realtime_queue_stats.consumers.{key}",
+                                val,
+                                tags=tags + [f'cluster:{c}'],
                             )
 
             if (
@@ -126,7 +140,9 @@ class RiakReplCheck(AgentCheck):
                 for key, val in iteritems(stats['sinks']['sink_stats']['rt_sink_connected_to']):
                     if key in self.REALTIME_SINK_CONN:
                         self.safe_submit_metric(
-                            "riak_repl.realtime_sink.connected." + key, val, tags=tags + ['cluster:%s' % c]
+                            f"riak_repl.realtime_sink.connected.{key}",
+                            val,
+                            tags=tags + [f'cluster:{c}'],
                         )
 
     def safe_submit_metric(self, name, value, tags=None):

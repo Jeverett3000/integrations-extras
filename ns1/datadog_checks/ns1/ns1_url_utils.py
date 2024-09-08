@@ -9,7 +9,6 @@ class Ns1Url:
     # generate url for QPS and usages statistics
     # returns dictionary in form of <metric name>:<metric url>}
     def get_stats_url_usage(self, key, val, networknames):
-        urlList = {}
         query_string = ""
 
         metric_name = "usage"
@@ -20,8 +19,7 @@ class Ns1Url:
         url = NS1_ENDPOINTS["qps.usage"].format(apiendpoint=self.api_endpoint, key=key, query=query_string)
         # get account wide stats
         tags = [""]
-        urlList[key] = [url, metric_name, tags, metric_type]
-
+        urlList = {key: [url, metric_name, tags, metric_type]}
         # if list of networks is supplied, query account-wide for each network as well
         if networknames and len(networknames) > 0:
             for k, v in networknames.items():
@@ -108,7 +106,6 @@ class Ns1Url:
     # generate url for QPS statistics
     # returns dictionary in form of <metric name>:<metric url>}
     def get_stats_url_qps(self, key, val):
-        urlList = {}
         query_string = ""
         metric_name = "qps"
         metric_zone = "qps.zone"
@@ -117,8 +114,7 @@ class Ns1Url:
         url = NS1_ENDPOINTS["qps.usage"].format(apiendpoint=self.api_endpoint, key="qps", query=query_string)
         # get account wide stats
         tags = [""]
-        urlList[key] = [url, metric_name, tags, metric_type]
-
+        urlList = {key: [url, metric_name, tags, metric_type]}
         if not val:
             return urlList
         for zoneDict in val:
@@ -162,7 +158,6 @@ class Ns1Url:
 
     # generate url for DDI lease and lps statistics
     def get_ddi_url(self, key, val, scopegroups):
-        urlList = {}
         metric_lease = "leases"
         metric_lps = "peak_lps"
         metric_type_count = "count"
@@ -171,8 +166,7 @@ class Ns1Url:
         # first get account-wide lease and lps stats
         tags = ["scope_group:account_wide"]
         url = NS1_ENDPOINTS["ddi.leases"].format(apiendpoint=self.api_endpoint)
-        urlList["leases"] = [url, metric_lease, tags, metric_type_count]
-
+        urlList = {"leases": [url, metric_lease, tags, metric_type_count]}
         url = NS1_ENDPOINTS["ddi.lps"].format(apiendpoint=self.api_endpoint)
         urlList["peak_lps"] = [url, metric_lps, tags, metric_type_gauge]
 
@@ -206,10 +200,10 @@ class Ns1Url:
 
         if not val:
             return urlList
+        metric_record = "ttl"
+        metric_type = "gauge"
         for accDict in val:
             for _, domainList in accDict.items():
-                metric_record = "ttl"
-                metric_type = "gauge"
                 if domainList:
                     for domain in domainList:
                         tags = [r"record:{zone}".format(zone=domain)]
@@ -223,35 +217,39 @@ class Ns1Url:
         return urlList
 
     def get_plan_details_url(self, key, val):
-        urlList = {}
-
         # get account plan limits
         url = NS1_ENDPOINTS["billing"].format(apiendpoint=self.api_endpoint)
         tags = [""]
         metric_record = "billing"
         metric_type = "gauge"
-        urlList["{key}.billing".format(key=key)] = [url, metric_record, tags, metric_type]
-
-        return urlList
+        return {
+            "{key}.billing".format(key=key): [
+                url,
+                metric_record,
+                tags,
+                metric_type,
+            ]
+        }
 
     def get_pulsar_by_record_url(self, val, query_params):
         urlList = {}
         query_string = "?period=1h&"
         if query_params:
             if "pulsar_geo" in query_params and query_params["pulsar_geo"] != "*":
-                query_string = query_string + "geo=" + query_params["pulsar_geo"] + "&"
+                query_string = f"{query_string}geo=" + query_params["pulsar_geo"] + "&"
                 if "pulsar_asn" in query_params and query_params["pulsar_asn"] != "*":
-                    query_string = query_string + "asn=" + query_params["pulsar_asn"] + "&"
+                    query_string = f"{query_string}asn=" + query_params["pulsar_asn"] + "&"
         query_string = query_string[:-1]
 
+        metric_type = "count"
         for record in val:
             for domain, rectype in record.items():
                 tags = [r"record:{record}".format(record=domain)]
-                metric_type = "count"
                 metric_record = "pulsar.decisions.record"
                 # pulsar decisions for record
                 url = NS1_ENDPOINTS["pulsar.decisions.record"].format(
-                    apiendpoint=self.api_endpoint, query=query_string + "&agg=jobid&record=" + domain + "_" + rectype
+                    apiendpoint=self.api_endpoint,
+                    query=f"{query_string}&agg=jobid&record={domain}_{rectype}",
                 )
                 k = r"pulsar.decisions.{rec_name}.{rec_type}".format(rec_name=domain, rec_type=rectype)
                 urlList[k] = [url, metric_record, tags, metric_type]
@@ -279,11 +277,11 @@ class Ns1Url:
         query_string = "?"
         if query_params:
             if "pulsar_period" in query_params:
-                query_string = query_string + "period=" + query_params["pulsar_period"] + "&"
+                query_string = f"{query_string}period=" + query_params["pulsar_period"] + "&"
             if "pulsar_geo" in query_params and query_params["pulsar_geo"] != "*":
-                query_string = query_string + "geo=" + query_params["pulsar_geo"] + "&"
+                query_string = f"{query_string}geo=" + query_params["pulsar_geo"] + "&"
                 if "pulsar_asn" in query_params and query_params["pulsar_asn"] != "*":
-                    query_string = query_string + "asn=" + query_params["pulsar_asn"] + "&"
+                    query_string = f"{query_string}asn=" + query_params["pulsar_asn"] + "&"
         query_string = query_string[:-1]
 
         for app in val:
@@ -315,16 +313,12 @@ class Ns1Url:
         return urlList
 
     def get_pulsar_url(self, query_params):
-        urlList = {}
-        query_string = "?"
-        # for "pulsar" group of endpoints, override settings and always use period = 1h
-        # to get properly sumarized stats
-        query_string = query_string + "period=1h&"
+        query_string = "?" + "period=1h&"
         if query_params:
             if "pulsar_geo" in query_params and query_params["pulsar_geo"] != "*":
-                query_string = query_string + "geo=" + query_params["pulsar_geo"] + "&"
+                query_string = f"{query_string}geo=" + query_params["pulsar_geo"] + "&"
                 if "pulsar_asn" in query_params and query_params["pulsar_asn"] != "*":
-                    query_string = query_string + "asn=" + query_params["pulsar_asn"] + "&"
+                    query_string = f"{query_string}asn=" + query_params["pulsar_asn"] + "&"
         query_string = query_string[:-1]
 
         tags = [""]
@@ -333,16 +327,18 @@ class Ns1Url:
         metric_type = "count"
 
         # pulsar decisions account wide
-        url = NS1_ENDPOINTS[keyname].format(apiendpoint=self.api_endpoint, query=query_string + "&agg=jobid")
-        urlList[keyname] = [url, metric_record, tags, metric_type]
-
+        url = NS1_ENDPOINTS[keyname].format(
+            apiendpoint=self.api_endpoint, query=f"{query_string}&agg=jobid"
+        )
+        urlList = {keyname: [url, metric_record, tags, metric_type]}
         tags = [""]
 
         # pulsar insufficient decision data for account
         metric_record = "pulsar.decisions.insufficient"
         keyname = "pulsar.decisions.insufficient"
         url = NS1_ENDPOINTS[keyname].format(
-            apiendpoint=self.api_endpoint, query=query_string + "&agg=jobid&result=ERR_INSUF"
+            apiendpoint=self.api_endpoint,
+            query=f"{query_string}&agg=jobid&result=ERR_INSUF",
         )
         urlList[keyname] = [url, metric_record, tags, metric_type]
 

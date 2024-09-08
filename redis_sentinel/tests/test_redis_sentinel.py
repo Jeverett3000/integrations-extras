@@ -86,12 +86,8 @@ def test_down_slaves(aggregator, instance):
     """
     check = RedisSentinelCheck(CHECK_NAME, {}, {})
 
-    sentinel_slaves = []
-    for _ in range(5):
-        sentinel_slaves.append({'is_odown': True, 'is_sdown': False})
-    for _ in range(7):
-        sentinel_slaves.append({'is_odown': False, 'is_sdown': True})
-
+    sentinel_slaves = [{'is_odown': True, 'is_sdown': False} for _ in range(5)]
+    sentinel_slaves.extend({'is_odown': False, 'is_sdown': True} for _ in range(7))
     with mock.patch('redis.StrictRedis.sentinel_slaves', return_value=sentinel_slaves):
         check.check(instance)
 

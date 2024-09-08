@@ -21,7 +21,7 @@ def test_e2e(dd_agent_check):
 
     for instance in CHECK_CONFIG['instances']:
         tags = [
-            'instance:flume-{}-{}'.format(instance['host'], instance['port']),
-            'jmx_server:{}'.format(instance['host']),
+            f"instance:flume-{instance['host']}-{instance['port']}",
+            f"jmx_server:{instance['host']}",
         ]
         aggregator.assert_service_check('flume.can_connect', status=AgentCheck.OK, tags=tags)

@@ -125,25 +125,24 @@ class LogstashCheck(AgentCheck):
         # backwards-compatibility.
         parsed = urlparse(url)
         if parsed[2] != "":
-            url = "%s://%s" % (parsed[0], parsed[1])
+            url = f"{parsed[0]}://{parsed[1]}"
         port = parsed.port
         host = parsed.hostname
 
         custom_tags = instance.get('tags', [])
-        service_check_tags = ['host:%s' % host, 'port:%s' % port]
+        service_check_tags = [f'host:{host}', f'port:{port}']
         service_check_tags.extend(custom_tags)
 
         # Tag by URL so we can differentiate the metrics
         # from multiple instances
-        tags = ['url:%s' % url]
+        tags = [f'url:{url}']
         tags.extend(custom_tags)
 
-        config = LogstashInstanceConfig(
+        return LogstashInstanceConfig(
             service_check_tags=service_check_tags,
             tags=tags,
             url=url,
         )
-        return config
 
     def _get_data(self, url, config, send_sc=True):
         """Hit a given URL and return the parsed json"""
@@ -203,7 +202,7 @@ class LogstashCheck(AgentCheck):
                     # skip internal pipelines like '.monitoring_logstash'
                     continue
                 metric_tags = list(config.tags)
-                metric_tags.append(u'pipeline_name:{}'.format(pipeline_name))
+                metric_tags.append(f'pipeline_name:{pipeline_name}')
                 self._process_pipeline_data(pipeline_data, metric_tags, logstash_version)
 
         self.service_check(self.SERVICE_CHECK_CONNECT_NAME, AgentCheck.OK, tags=config.service_check_tags)
@@ -250,11 +249,11 @@ class LogstashCheck(AgentCheck):
             if not plugin_name:
                 plugin_name = 'unknown'
 
-            metrics_tags.append(u"{}:{}".format(tag_name, plugin_name))
+            metrics_tags.append(f"{tag_name}:{plugin_name}")
             if pipeline_name:
-                metrics_tags.append(u"pipeline_name:{}".format(pipeline_name))
+                metrics_tags.append(f"pipeline_name:{pipeline_name}")
             if plugin_conf_id:
-                metrics_tags.append(u"plugin_conf_id:{}".format(plugin_conf_id))
+                metrics_tags.append(f"plugin_conf_id:{plugin_conf_id}")
 
             for metric, desc in iteritems(pipeline_plugins_metrics):
                 self._process_metric(plugin_data, metric, *desc, tags=metrics_tags)
@@ -273,13 +272,13 @@ class LogstashCheck(AgentCheck):
             else:
                 break
 
-        if value is not None:
-            if xtype == "gauge":
-                self.gauge(metric, value, tags=tags, hostname=hostname)
-            else:
-                self.rate(metric, value, tags=tags, hostname=hostname)
-        else:
+        if value is None:
             self._metric_not_found(metric, path)
+
+        elif xtype == "gauge":
+            self.gauge(metric, value, tags=tags, hostname=hostname)
+        else:
+            self.rate(metric, value, tags=tags, hostname=hostname)
 
     def _metric_not_found(self, metric, path):
         self.log.debug("Metric not found: %s -> %s", path, metric)

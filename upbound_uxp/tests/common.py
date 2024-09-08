@@ -10,4 +10,4 @@ COMPOSE_FILE = os.path.join(HERE, 'docker', 'docker-compose.yaml')
 
 
 def get_metrics_fixture_path(exporter_type):
-    return os.path.join(HERE, 'docker', 'exporter_{}'.format(exporter_type), 'metrics.txt')
+    return os.path.join(HERE, 'docker', f'exporter_{exporter_type}', 'metrics.txt')

@@ -53,7 +53,7 @@ class Device:
         for t in self.__requested_tags:
             tag_value = get_by_path(device_info, t["value"])
             if tag_value is not None:
-                self.tags.append("{}:{}".format(t["key"], tag_value))
+                self.tags.append(f'{t["key"]}:{tag_value}')
 
     def _get_metrics(self, device_info: dict) -> None:
         for m in self.__requested_metrics:
@@ -90,7 +90,7 @@ class Device:
         for t in wanted_tags:
             tag_value = get_by_path(device_info, t)
             if tag_value is not None:
-                uplink_tags.append("{}:{}".format(t, tag_value))
+                uplink_tags.append(f"{t}:{tag_value}")
 
         up = get_by_path(device_info, "uplink.up")
         if up is not None:
